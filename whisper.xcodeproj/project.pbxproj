@@ -711,7 +711,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20700004;
+				CURRENT_PROJECT_VERSION = 20800000;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = P7YF26GARW;
 				ENABLE_PREVIEWS = YES;
@@ -731,7 +731,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.7;
+				MARKETING_VERSION = 2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = io.clickonetwo.whisper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -754,7 +754,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20700004;
+				CURRENT_PROJECT_VERSION = 20800000;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				DEVELOPMENT_TEAM = P7YF26GARW;
 				ENABLE_PREVIEWS = YES;
@@ -774,7 +774,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.7;
+				MARKETING_VERSION = 2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = io.clickonetwo.whisper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

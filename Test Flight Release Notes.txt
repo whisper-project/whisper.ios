@@ -581,5 +581,8 @@ New feature: There is a new Whisperer setting called "Status Bar on top". When y
 
 Cosmetic change: Because this app is now published by the non-profit Whisper Project (a project of Software in the Public Interest), rather than by ClickOneTwo Consulting LLC, the web pages for instructional and support content have changed locations.
 ========
+Release notes for build 2.8.0:
+The release of the new Tahoe OS on iPad and Mac has brought with it some bugs that can cause the Whisperer's app to be restarted by the OS while it's in the middle of a conversation. This new build allows a Whisperer to rejoin an existing conversation that they were in before the crash occurred. The Listeners won't even know the crash happened.
 
-
+In order for the resume behavior to be completely seamless, both Whisperers and Listeners have to be running this new build. If only the Whisperer runs it, but the Listeners are not, then the Whisperer will not know who's in the conversation after resuming it.
+=========
