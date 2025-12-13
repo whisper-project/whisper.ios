@@ -57,7 +57,7 @@ Yes. The state of Whisperer controls is used for all conversations, and similarl
 
 ## Need More Support?
 
-If the answers above have not solved your problem, please contact us through [this form](https://forms.gle/qrzSnB46tFqMBUZq9) and we will get back to you as soon as we can. Please note that this is a single-developer app, so response times will not be immediate (or maybe not even quick).
+If the answers above have not solved your problem, please contact us through [this form](https://forms.gle/Y6EBCHJGj27dmQqWA) and we will get back to you as soon as we can. Please note that this is a single-developer app, so response times will not be immediate (or maybe not even quick).
 
 At the [Whisper Project](http://whisper-project.org), we are firm believers that there are NO stupid questions, especially when it comes to using technology. We want to make Whisper as helpful as possible to everyone, so we truly appreciate your feedback.
 
