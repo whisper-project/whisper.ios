@@ -97,14 +97,14 @@ struct WhisperView: View {
 			.onChange(of: interjectionPrefix) { UserProfile.shared.settingsProfile.update() }
 			.onChange(of: interjectionAlert) { UserProfile.shared.settingsProfile.update() }
 			.onAppear {
-				logger.log("WhisperView appeared")
+				logAnomaly("WhisperView appeared")
 				model.start()
 				focusField = "liveText"
 				SleepControl.shared.disable(reason: "In Whisper Session")
 			}
 			.onDisappear {
 				SleepControl.shared.enable()
-				logger.log("WhisperView disappeared")
+				logAnomaly("WhisperView disappeared")
 				model.stop()
 			}
 			.onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification), perform: { _ in
@@ -303,7 +303,7 @@ struct WhisperView: View {
 			logger.log("Whisper view is already terminating")
 			return
 		}
-		logger.warning("Whisper view is terminating in response to quit signal")
+		logAnomaly("Whisper view is terminating in response to quit signal")
 		viewHasRespondedToQuit = true
 		model.stop()
 	}

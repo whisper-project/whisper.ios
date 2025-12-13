@@ -73,7 +73,7 @@ final class WhisperViewModel: ObservableObject {
 
 	let up = UserProfile.shared.whisperProfile
 	let fp = UserProfile.shared.favoritesProfile
-	let contentId = UUID().uuidString
+	let contentId = PreferenceData.contentId
 
     init(_ conversation: WhisperConversation) {
         logger.log("Initializing WhisperView model")
@@ -88,7 +88,6 @@ final class WhisperViewModel: ObservableObject {
 		self.transport.controlSubject
 			.sink { [weak self] in self?.receiveControlChunk($0) }
 			.store(in: &cancellables)
-		PreferenceData.contentId = contentId
     }
     
     deinit {
@@ -99,17 +98,18 @@ final class WhisperViewModel: ObservableObject {
     // MARK: View entry points
     
     func start() {
-		logger.log("Starting WhisperView model")
+		logAnomaly("Starting WhisperView model")
         resetText()
         refreshStatusText()
         transport.start(failureCallback: signalConnectionError)
     }
     
     func stop() {
-		logger.log("Stopping WhisperView model")
+		logAnomaly("Stopping WhisperView model")
         transport.stop()
         resetText()
         refreshStatusText()
+		PreferenceData.contentId = ""
     }
 
 	func sendRestart() {

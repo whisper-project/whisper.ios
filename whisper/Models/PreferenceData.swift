@@ -117,10 +117,11 @@ struct PreferenceData {
 			// still using the same server, nothing to do
 			return
 		}
-		logger.warning("Server change noticed: resetting client secrets")
+		logger.warning("Server change noticed: resetting client secrets and conversation key")
 		defaults.set(whisperServer, forKey: "whisper_last_used_server")
 		defaults.removeObject(forKey: "whisper_last_client_secret")
 		defaults.removeObject(forKey: "whisper_client_secret")
+		defaults.removeObject(forKey: "content_channel_id")
 	}
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
@@ -146,7 +147,11 @@ struct PreferenceData {
 			}
 		}
 		set(new) {
-			defaults.setValue(new, forKey: "content_channel_id")
+			if new.isEmpty {
+				defaults.removeObject(forKey: "content_channel_id")
+			} else {
+				defaults.setValue(new, forKey: "content_channel_id")
+			}
 		}
 	}
 
