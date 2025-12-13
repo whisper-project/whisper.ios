@@ -321,6 +321,9 @@ final class ListenViewModel: ObservableObject {
 			let candidate = candidateFor(remote: remote, info: info, conversation: conversation)
 			if whisperer === candidate {
 				logAnomaly("Received second approval for the same conversation", kind: candidate.remote.kind)
+				// Whisperer must have restarted, so let them know we're in the conversation
+				let chunk = WhisperProtocol.ProtocolChunk.joining(conversation)
+				transport.sendControl(remote: candidate.remote, chunk: chunk)
 			} else {
 				setWhisperer(candidate: candidate, conversation: conversation)
 			}
