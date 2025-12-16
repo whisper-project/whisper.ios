@@ -136,7 +136,7 @@ final class TcpWhisperTransport: PublishTransport {
     }
 
 	private func openContentChannel() {
-		let channel = client!.channels.get(conversation.id + ":" + PreferenceData.contentId)
+		let channel = client!.channels.get(conversation.id + ":" + PreferenceData.getContentId(conversation.id))
 		contentChannel = channel
 	}
 

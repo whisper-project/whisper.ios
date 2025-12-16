@@ -135,24 +135,40 @@ struct PreferenceData {
 		}
     }
 
-	// content channel ID
-	static var contentId: String {
-		get {
-			if let value = defaults.string(forKey: "content_channel_id") {
-				return value
-			} else {
-				let new = UUID().uuidString
-				defaults.setValue(new, forKey: "content_channel_id")
-				return new
-			}
+	// content channel ID - one for each conversation, remembered so we can restart and rejoin
+	static private var contentIds: [String: String] = {
+		let saved = defaults.dictionary(forKey: "convo_content_id_map")
+		if saved == nil {
+			logger.debug("No saved contentIds at startup")
+			return [:]
 		}
-		set(new) {
-			if new.isEmpty {
-				defaults.removeObject(forKey: "content_channel_id")
-			} else {
-				defaults.setValue(new, forKey: "content_channel_id")
-			}
+		logger.debug("\(saved!.count) saved contentIds at startup")
+		return saved as! [String: String]
+	}()
+	static private func saveContentIds() {
+		if contentIds.isEmpty {
+			logger.debug("There are no saved contentIds")
+			defaults.removeObject(forKey: "convo_content_id_map")
+		} else {
+			logger.debug("There are \(contentIds.count) saved contentIds")
+			defaults.set(contentIds, forKey: "convo_content_id_map")
 		}
+	}
+	static func clearContentId(_ conversationId: String) {
+		logger.debug("Clearing content id for conversation \(conversationId)")
+		contentIds.removeValue(forKey: conversationId)
+		saveContentIds()
+	}
+	static func getContentId(_ conversationId: String) -> String {
+		var id = contentIds[conversationId] ?? ""
+		if id.isEmpty {
+			logger.debug("Creating new content id for conversation \(conversationId)")
+			id = UUID().uuidString
+			contentIds[conversationId] = id
+			saveContentIds()
+		}
+		logger.debug("Returning content id \(id) for conversation \(conversationId)")
+		return id
 	}
 
 	// size of text

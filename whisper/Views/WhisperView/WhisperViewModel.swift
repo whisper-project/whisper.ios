@@ -70,14 +70,15 @@ final class WhisperViewModel: ObservableObject {
     private var soundEffect: AVAudioPlayer?
 	private var typingPlayer: AVAudioPlayer?
 	private var playingTypingSound = false
+	private var contentId: String
 
 	let up = UserProfile.shared.whisperProfile
 	let fp = UserProfile.shared.favoritesProfile
-	let contentId = PreferenceData.contentId
 
     init(_ conversation: WhisperConversation) {
         logger.log("Initializing WhisperView model")
 		self.conversation = conversation
+		self.contentId = PreferenceData.getContentId(conversation.id)
         self.transport = ComboFactory.shared.publisher(conversation)
         self.transport.lostRemoteSubject
             .sink { [weak self] in self?.lostRemote($0) }
@@ -109,7 +110,7 @@ final class WhisperViewModel: ObservableObject {
         transport.stop()
         resetText()
         refreshStatusText()
-		PreferenceData.contentId = ""
+		PreferenceData.clearContentId(conversation.id)
     }
 
 	func sendRestart() {
