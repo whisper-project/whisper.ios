@@ -586,3 +586,6 @@ The release of the new Tahoe OS on iPad and Mac has brought with it some bugs th
 
 In order for the resume behavior to be completely seamless, both Whisperers and Listeners have to be running this new build. If only the Whisperer runs it, but the Listeners are not, then the Whisperer will not know who's in the conversation after resuming it.
 =========
+Release notes for build 2.8.1:
+With this build, the Whisper can resume multiple conversations independently after a crash, so ending one of multiple conversations before the crash will not prevent resuming the other conversations after the crash.
+=========
