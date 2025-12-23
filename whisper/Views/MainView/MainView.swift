@@ -27,7 +27,7 @@ struct MainView: View {
                 ChoiceView(mode: $mode, conversation: $conversation, transportStatus: $model.status)
                 Spacer()
 				Toggle("Larger Type", isOn: $useLargeSizes)
-					.frame(maxWidth: useLargeSizes ? 220 : 175)
+					.frame(maxWidth: useLargeSizes ? 260 : 205)
                 Text("v\(versionString)")
                     .textSelection(.enabled)
                     .font(FontSizes.fontFor(name: .xxxsmall))

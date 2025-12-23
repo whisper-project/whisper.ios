@@ -31,63 +31,25 @@ struct ChoiceView: View {
 	@StateObject private var profile = UserProfile.shared
 	@State private var window: Window?
 
-    let nameWidth = CGFloat(350)
-    let nameHeight = CGFloat(105)
-    let choiceButtonWidth = CGFloat(140)
-    let choiceButtonHeight = CGFloat(45)
+	func nameWidth() -> CGFloat { return useLargeSizes ? 380 : 350 }
+	func nameHeight() -> CGFloat { return useLargeSizes ? 145 : 125 }
+	func choiceButtonWidth() -> CGFloat {return useLargeSizes ? 170: 140 }
+	func choiceButtonHeight() -> CGFloat { return useLargeSizes ? 65 : 45 }
 
     var body: some View {
 		WindowBinder(window: $window) {
 			VStack(spacing: 40) {
-				Form {
-					Section(header: Text("Your Name")) {
-						HStack {
-							TextField("Your Name", text: $newUsername, prompt: Text("Fill in to continue…"))
-								.submitLabel(.done)
-								.focused($nameEdit)
-								.textInputAutocapitalization(.never)
-								.disableAutocorrection(true)
-								.allowsTightening(true)
-							Button("Submit", systemImage: "checkmark.square.fill") { nameEdit = false }
-								.labelStyle(.iconOnly)
-								.disabled(newUsername.isEmpty || newUsername == profile.username)
-						}
-					}
-				}
-				.frame(maxWidth: nameWidth, maxHeight: nameHeight)
+				nameForm()
 				if (showWhisperButtons) {
 					if transportStatus != .on {
-						switch transportStatus {
-						case .off:
-							Link("Enable Bluetooth or Wireless to whisper or listen...", destination: settingsUrl)
-								.font(FontSizes.fontFor(name: .normal))
-								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-						case .localOnly:
-							Text("Bluetooth ready, Wireless not available")
-								.font(FontSizes.fontFor(name: .normal))
-								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-						case .globalOnly:
-							Text("Bluetooth not available, Wireless available")
-								.font(FontSizes.fontFor(name: .normal))
-								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-						case .disabled:
-							Link("Bluetooth not enabled, Wireless available", destination: settingsUrl)
-								.font(FontSizes.fontFor(name: .normal))
-								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-						case .waiting:
-							Text("Waiting for Bluetooth, Wireless available")
-								.font(FontSizes.fontFor(name: .normal))
-								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-						case .on:
-							fatalError("Can't happen: transport status is .on")
-						}
+						transportStatusView()
 					}
 					HStack(spacing: 30) {
 						Button(action: {}) {
 							Text("Whisper")
 								.foregroundColor(.white)
 								.fontWeight(.bold)
-								.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+								.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
 						}
 						.background(profile.username == "" ? Color.gray : Color.accentColor)
 						.cornerRadius(15)
@@ -131,7 +93,7 @@ struct ChoiceView: View {
 							Text("Listen")
 								.foregroundColor(.white)
 								.fontWeight(.bold)
-								.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+								.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
 						}
 						.background(Color.accentColor)
 						.cornerRadius(15)
@@ -179,7 +141,7 @@ struct ChoiceView: View {
 						Text("Favorites")
 							.foregroundColor(.white)
 							.fontWeight(.bold)
-							.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+							.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
 					}
 					.background(Color.accentColor)
 					.cornerRadius(15)
@@ -193,7 +155,7 @@ struct ChoiceView: View {
 						Text("Settings")
 							.foregroundColor(.white)
 							.fontWeight(.bold)
-							.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
+							.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
 					}
 					.background(Color.accentColor)
 					.cornerRadius(15)
@@ -205,7 +167,7 @@ struct ChoiceView: View {
 						Text("How To Use")
 							.foregroundColor(.white)
 							.fontWeight(.bold)
-							.frame(width: choiceButtonWidth + 50, height: choiceButtonHeight, alignment: .center)
+							.frame(width: choiceButtonWidth() + 50, height: choiceButtonHeight(), alignment: .center)
 					}
 					.background(Color.accentColor)
 					.cornerRadius(15)
@@ -213,17 +175,17 @@ struct ChoiceView: View {
 						Button("About", action: {
 							UIApplication.shared.open(aboutSite)
 						})
-						.frame(width: choiceButtonWidth, alignment: .center)
+						.frame(width: choiceButtonWidth(), alignment: .center)
 						Spacer()
 						Button("Support", action: {
 							UIApplication.shared.open(supportSite)
 						})
-						.frame(width: choiceButtonWidth, alignment: .center)
+						.frame(width: choiceButtonWidth(), alignment: .center)
 					}
-					.frame(width: nameWidth)
+					.frame(width: nameWidth())
 					Button("Profile Sharing", action: { showSharingSheet = true })
 						.disabled(nameEdit)
-						.frame(width: choiceButtonWidth + 50, alignment: .center)
+						.frame(width: choiceButtonWidth() + 50, alignment: .center)
 						.sheet(isPresented: $showSharingSheet, content: {
 							ShareProfileView()
 								.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
@@ -260,7 +222,53 @@ struct ChoiceView: View {
 			}
 		}
     }
-    
+
+	@ViewBuilder func nameForm() -> some View {
+		Form {
+			Section(header: Text("Your Name")) {
+				HStack {
+					TextField("Your Name", text: $newUsername, prompt: Text("Fill in to continue…"))
+						.submitLabel(.done)
+						.focused($nameEdit)
+						.textInputAutocapitalization(.never)
+						.disableAutocorrection(true)
+						.allowsTightening(true)
+					Button("Submit", systemImage: "checkmark.square.fill") { nameEdit = false }
+						.labelStyle(.iconOnly)
+						.disabled(newUsername.isEmpty || newUsername == profile.username)
+				}
+			}
+		}
+		.frame(maxWidth: nameWidth(), maxHeight: nameHeight())
+	}
+
+	@ViewBuilder func transportStatusView() -> some View {
+		switch transportStatus {
+		case .off:
+			Link("Enable Bluetooth or Wireless to whisper or listen...", destination: settingsUrl)
+				.font(FontSizes.fontFor(name: .normal))
+				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+		case .localOnly:
+			Text("Bluetooth ready, Wireless not available")
+				.font(FontSizes.fontFor(name: .normal))
+				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+		case .globalOnly:
+			Text("Bluetooth not available, Wireless available")
+				.font(FontSizes.fontFor(name: .normal))
+				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+		case .disabled:
+			Link("Bluetooth not enabled, Wireless available", destination: settingsUrl)
+				.font(FontSizes.fontFor(name: .normal))
+				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+		case .waiting:
+			Text("Waiting for Bluetooth, Wireless available")
+				.font(FontSizes.fontFor(name: .normal))
+				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+		case .on:
+			fatalError("Can't happen: transport status is .on")
+		}
+	}
+
     func updateFromProfile() {
         newUsername = profile.username
         if profile.username.isEmpty {
