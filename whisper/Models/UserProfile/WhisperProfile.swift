@@ -140,6 +140,10 @@ final class WhisperProfile: Codable {
 		return sorted
 	}
 
+	func getConversation(_ id: String) -> WhisperConversation? {
+		return table[id]
+	}
+
 	/// Create a new whisper conversation
 	@discardableResult func new() -> WhisperConversation {
 		let c = newInternal()

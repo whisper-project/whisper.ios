@@ -99,18 +99,24 @@ final class WhisperViewModel: ObservableObject {
     // MARK: View entry points
     
     func start() {
-		logAnomaly("Starting WhisperView model")
+		logAnomaly("Starting Whisper session for conversation \(conversation.id) (\(conversation.name))")
         resetText()
         refreshStatusText()
         transport.start(failureCallback: signalConnectionError)
     }
     
-    func stop() {
-		logAnomaly("Stopping WhisperView model")
+	func stop(endSession: Bool = false) {
+		if endSession {
+			logAnomaly("Ending Whisper session for conversation \(conversation.id) (\(conversation.name))")
+		} else {
+			logAnomaly("Suspending Whisper session for conversation \(conversation.id) (\(conversation.name))")
+		}
         transport.stop()
         resetText()
         refreshStatusText()
-		PreferenceData.clearContentId(conversation.id)
+		if endSession {
+			PreferenceData.clearContentId(conversation.id)
+		}
     }
 
 	func sendRestart() {

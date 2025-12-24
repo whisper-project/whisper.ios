@@ -97,7 +97,7 @@ final class ListenViewModel: ObservableObject {
     
     // MARK: View entry points
     func start() {
-		logger.info("Starting listen session")
+		logAnomaly("Starting listen session for \(conversation.id) (\(conversation.name))")
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if error != nil {
@@ -112,7 +112,7 @@ final class ListenViewModel: ObservableObject {
     }
     
     func stop() {
-		logger.info("Stopping listen session")
+		logAnomaly("Ending listen session for \(conversation.id) (\(conversation.name))")
 		stopTypingSound()
 		transport.stop()
 		whisperer = nil

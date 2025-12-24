@@ -359,7 +359,7 @@ func logControlChunk(sentOrReceived: String, chunk: WhisperProtocol.ProtocolChun
 }
 
 func logAnomaly(_ message: String, kind: TransportKind? = nil) {
-	let kindString = kind == nil ? "Non-transport" : kind == .global ? "TCP" : "Bluetooth"
+	let kindString = kind == nil ? "Lifecycle" : kind == .global ? "TCP" : "Bluetooth"
 	logger.error("\(kindString, privacy: .public) anomaly reported: \(message, privacy: .public)")
 	let path = "/api/v2/logAnomaly"
 	guard let url = URL(string: PreferenceData.whisperServer + path) else {

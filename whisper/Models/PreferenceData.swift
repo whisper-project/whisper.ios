@@ -135,6 +135,59 @@ struct PreferenceData {
 		}
     }
 
+	// scene state - one for each scene session, remembered so we can resume when reattached
+	typealias SceneState = (mode: String, conversationId: String)
+	static private var sceneStates: [String: SceneState] = {
+		let saved = defaults.dictionary(forKey: "scene_state_map") as? [String: String]
+		guard let saved = saved else {
+			logger.debug("No saved sceneStates at startup")
+			return [:]
+		}
+		var states: [String: SceneState] = [:]
+		for (sceneId, value) in saved {
+			let parts = value.split(separator: "|", omittingEmptySubsequences: false)
+			guard parts.count == 2 && !parts[0].isEmpty && !parts[1].isEmpty else {
+				logger.warning("Ignoring malformed sceneState entry: \(value)")
+				continue
+			}
+			states[sceneId] = SceneState(mode: String(parts[0]), conversationId: String(parts[1]))
+		}
+		logger.debug("\(states.count) saved sceneStates at startup")
+		return states
+	}()
+	static private func saveSceneStates() {
+		if sceneStates.isEmpty {
+			logger.debug("There are no saved sceneStates")
+			defaults.removeObject(forKey: "scene_state_map")
+		} else {
+			logger.debug("There are \(sceneStates.count) saved sceneStates")
+			var saved: [String: String] = [:]
+			for (sceneId, state) in sceneStates {
+				saved[sceneId] = "\(state.mode)|\(state.conversationId)"
+			}
+			defaults.set(saved, forKey: "scene_state_map")
+		}
+	}
+	static func setSceneState(_ sceneId: String, mode: String, conversationId: String) {
+		logger.debug("Setting scene state for scene \(sceneId) to (\(mode), \(conversationId))")
+		sceneStates[sceneId] = SceneState(mode: mode, conversationId: conversationId)
+		saveSceneStates()
+	}
+	static func clearSceneState(_ sceneId: String) {
+		logger.debug("Clearing scene state for scene \(sceneId)")
+		sceneStates.removeValue(forKey: sceneId)
+		saveSceneStates()
+	}
+	static func getSceneState(_ sceneId: String) -> SceneState? {
+		let state = sceneStates[sceneId]
+		if state == nil {
+			logger.debug("No saved scene state for scene \(sceneId)")
+		} else {
+			logger.debug("Saved scene state for scene \(sceneId) is (\(state!.mode), \(state!.conversationId))")
+		}
+		return state
+	}
+
 	// content channel ID - one for each conversation, remembered so we can restart and rejoin
 	static private var contentIds: [String: String] = {
 		let saved = defaults.dictionary(forKey: "convo_content_id_map")

@@ -11,6 +11,8 @@ struct ChoiceView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
+	@EnvironmentObject private var sceneDelegate: SceneDelegate
+
 	@AppStorage("whisper_tap_preference") private var whisperTapAction: String?
 	@AppStorage("listen_tap_preference") private var listenTapAction: String?
 	@AppStorage("main_view_large_sizes_setting") private var useLargeSizes: Bool = false

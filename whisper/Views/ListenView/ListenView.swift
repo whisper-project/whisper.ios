@@ -73,13 +73,15 @@ struct ListenView: View {
 				}
 			}
 			.onAppear {
-				logger.log("ListenView appeared")
+				logAnomaly("ListenView appeared in scene \(sceneDelegate.id)")
+				PreferenceData.setSceneState(sceneDelegate.id, mode: "listen", conversationId: conversation.id)
 				self.model.start()
 				SleepControl.shared.disable(reason: "In Listen Session")
 			}
 			.onDisappear {
 				SleepControl.shared.enable()
-				logger.log("ListenView disappeared")
+				logAnomaly("ListenView disappeared in scene \(sceneDelegate.id)")
+				PreferenceData.clearSceneState(sceneDelegate.id)
 				self.model.stop()
 			}
 			.onChange(of: hearTyping) {
@@ -89,13 +91,13 @@ struct ListenView: View {
 			}
 			.onChange(of: appStatus.appIsQuitting) {
 				if appStatus.appIsQuitting {
-					logAnomaly("ListenView in scene \(sceneDelegate.id) has been told window is being detached")
+					logAnomaly("App has been told to quit")
 					quitListenView()
 				}
 			}
-			.onChange(of: appStatus.sceneIsQuitting) {
-				if appStatus.sceneIsQuitting[sceneDelegate.id] == true {
-					logger.log("Window has been told to quit")
+			.onChange(of: appStatus.sceneQuit) {
+				if appStatus.sceneQuit[sceneDelegate.id] == true {
+					logAnomaly("ListenView in scene \(sceneDelegate.id) quitting due to detach")
 					quitListenView()
 				}
 			}
@@ -208,7 +210,7 @@ struct ListenView: View {
 
 	private func quitListenView() {
 		guard !viewHasRespondedToQuit else {
-			logger.log("Listen view is already terminating")
+			logAnomaly("Listen view in scene \(sceneDelegate.id) is already quitting")
 			return
 		}
 		logger.warning("Listen view is terminating in response to quit signal")

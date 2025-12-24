@@ -229,36 +229,32 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 	func application(_ application: UIApplication, didDiscardSceneSessions: Set<UISceneSession>) {
 		for session in didDiscardSceneSessions {
 			if let delegate = session.scene?.delegate as? SceneDelegate {
-				logAnomaly("Discarded scene with delegate id: \(delegate.id)")
-				AppStatus.shared.sceneIsQuitting[delegate.id] = true
+				logAnomaly("Discarded scene \(delegate.id)")
+				PreferenceData.clearSceneState(delegate.id)
 			}
 		}
 	}
 }
 
 class SceneDelegate: UIResponder, ObservableObject, UIWindowSceneDelegate {
-	static var nextDelegateId: Int = 0
+	@Published var id: String = ""
 
-	@Published var id: String
-
-	override init() {
-		Self.nextDelegateId += 1
-		id = "\(Self.nextDelegateId)"
-		super.init()
-		logAnomaly("Created scene with delegate id: \(id)")
+	func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options _ignore: UIScene.ConnectionOptions) {
+		id = session.persistentIdentifier
+		logAnomaly("Connected scene \(id)")
 	}
 
 	func sceneDidDisconnect(_ scene: UIScene) {
-		logAnomaly("Disconnected scene with delegate id: \(id)")
-		AppStatus.shared.sceneIsQuitting[id] = true
+		logAnomaly("Disconnected scene \(id)")
+		AppStatus.shared.sceneQuit[id] = true
 	}
 
 	func sceneDidBecomeActive(_ scene: UIScene) {
-		logger.debug("Activated scene with delegate id: \(self.id, privacy: .public)")
+		logger.debug("Activated scene \(self.id, privacy: .public)")
 	}
 
 	func sceneDidEnterBackground(_ scene: UIScene) {
-		logger.debug("Backgrounded scene with delegate id: \(self.id, privacy: .public)")
+		logger.debug("Backgrounded scene \(self.id, privacy: .public)")
 	}
 }
 
@@ -285,5 +281,5 @@ final class AppStatus: ObservableObject {
 	static var shared: AppStatus = .init()
 
 	@Published var appIsQuitting: Bool = false
-	@Published var sceneIsQuitting: [String: Bool] = [:]
+	@Published var sceneQuit: [String: Bool] = [:]
 }

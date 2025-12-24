@@ -98,29 +98,27 @@ struct WhisperView: View {
 			.onChange(of: interjectionPrefix) { UserProfile.shared.settingsProfile.update() }
 			.onChange(of: interjectionAlert) { UserProfile.shared.settingsProfile.update() }
 			.onAppear {
-				logAnomaly("WhisperView appeared")
+				logAnomaly("WhisperView appeared in scene \(sceneDelegate.id)")
+				PreferenceData.setSceneState(sceneDelegate.id, mode: "whisper", conversationId: conversation.id)
 				model.start()
 				focusField = "liveText"
 				SleepControl.shared.disable(reason: "In Whisper Session")
 			}
 			.onDisappear {
 				SleepControl.shared.enable()
-				logAnomaly("WhisperView disappeared")
-				model.stop()
+				logAnomaly("WhisperView disappeared in scene \(sceneDelegate.id)")
+				PreferenceData.clearSceneState(sceneDelegate.id)
+				model.stop(endSession: true)
 			}
-			.onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification), perform: { _ in
-				logAnomaly("WhisperView in scene \(sceneDelegate.id) has been told application will quit")
-				quitWhisperView()
-			})
 			.onChange(of: appStatus.appIsQuitting) {
 				if appStatus.appIsQuitting {
 					logger.log("App has been told to quit")
 					quitWhisperView()
 				}
 			}
-			.onChange(of: appStatus.sceneIsQuitting) {
-				if appStatus.sceneIsQuitting[sceneDelegate.id] == true {
-					logAnomaly("WhisperView in scene \(sceneDelegate.id) has been told window is being detached")
+			.onChange(of: appStatus.sceneQuit) {
+				if appStatus.sceneQuit[sceneDelegate.id] == true {
+					logAnomaly("WhisperView in scene \(sceneDelegate.id) quitting due to detach")
 					quitWhisperView()
 				}
 			}
@@ -307,7 +305,7 @@ struct WhisperView: View {
 
 	private func quitWhisperView() {
 		guard !viewHasRespondedToQuit else {
-			logger.log("Whisper view is already terminating")
+			logAnomaly("Whisper view in scene \(sceneDelegate.id) is already quitting")
 			return
 		}
 		viewHasRespondedToQuit = true
