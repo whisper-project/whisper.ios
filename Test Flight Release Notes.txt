@@ -592,3 +592,8 @@ With this build, Whisper can resume multiple conversations independently after a
 Release notes for build 2.8.2:
 With this build, Whisper manages each window in an independent scene, so dismissing an *inactive* window will not terminate sessions in other active or inactive windows. BUT. If you dismiss the active window, the OS will quit the app, so all sessions in all windows will be terminated. They can be resumed easily, but the reason it looks like the app has crashed is that you dismissed the active window.
 =========
+Release notes for build 2.8.3:
+Whisper now remembers exactly which state each of its windows was in, and resumes that state whenever that window is brought to the front. It no longer matters if the app has been terminated (either by the user or by the OS) between the time that window went to the background and the time it was brought back to the front.
+
+Both Listeners and Whisperers should update to this build.
+==========
