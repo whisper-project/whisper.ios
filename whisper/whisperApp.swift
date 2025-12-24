@@ -215,28 +215,69 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
 	func applicationWillTerminate(_ application: UIApplication) {
+		logAnomaly("App is terminating")
 		let shared = AppStatus.shared
 		shared.appIsQuitting = true
+	}
+
+	func application(_ application: UIApplication, configurationForConnecting: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+		let config = UISceneConfiguration(name: nil, sessionRole: .windowApplication)
+		config.delegateClass = SceneDelegate.self
+		return config
+	}
+
+	func application(_ application: UIApplication, didDiscardSceneSessions: Set<UISceneSession>) {
+		for session in didDiscardSceneSessions {
+			if let delegate = session.scene?.delegate as? SceneDelegate {
+				logAnomaly("Discarded scene with delegate id: \(delegate.id)")
+				AppStatus.shared.sceneIsQuitting[delegate.id] = true
+			}
+		}
+	}
+}
+
+class SceneDelegate: UIResponder, ObservableObject, UIWindowSceneDelegate {
+	static var nextDelegateId: Int = 0
+
+	@Published var id: String
+
+	override init() {
+		Self.nextDelegateId += 1
+		id = "\(Self.nextDelegateId)"
+		super.init()
+		logAnomaly("Created scene with delegate id: \(id)")
+	}
+
+	func sceneDidDisconnect(_ scene: UIScene) {
+		logAnomaly("Disconnected scene with delegate id: \(id)")
+		AppStatus.shared.sceneIsQuitting[id] = true
+	}
+
+	func sceneDidBecomeActive(_ scene: UIScene) {
+		logger.debug("Activated scene with delegate id: \(self.id, privacy: .public)")
+	}
+
+	func sceneDidEnterBackground(_ scene: UIScene) {
+		logger.debug("Backgrounded scene with delegate id: \(self.id, privacy: .public)")
 	}
 }
 
 // following code from https://stackoverflow.com/a/66394826/558006
-func restartApplication(){
-	let localUserInfo: [AnyHashable : Any] = ["pushType": "restart"]
+func restartApplication() {
+	logAnomaly("App is restarting")
 
 	let content = UNMutableNotificationContent()
 	content.title = "Whisper app is ready to launch"
 	content.body = "Tap to open the application"
 	content.sound = UNNotificationSound.default
+	let localUserInfo: [AnyHashable : Any] = ["pushType": "restart"]
 	content.userInfo = localUserInfo
 	let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.5, repeats: false)
-
 	let identifier = "org.whisper-project.client.swift.restart"
 	let request = UNNotificationRequest.init(identifier: identifier, content: content, trigger: trigger)
-
 	let center = UNUserNotificationCenter.current()
 	center.add(request)
-	
+
 	exit(0)
 }
 
@@ -244,4 +285,5 @@ final class AppStatus: ObservableObject {
 	static var shared: AppStatus = .init()
 
 	@Published var appIsQuitting: Bool = false
+	@Published var sceneIsQuitting: [String: Bool] = [:]
 }

@@ -10,6 +10,7 @@ struct WhisperView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
     @Environment(\.scenePhase) var scenePhase
+	@EnvironmentObject var sceneDelegate: SceneDelegate
 
     @Binding var mode: OperatingMode
     var conversation: WhisperConversation
@@ -108,12 +109,18 @@ struct WhisperView: View {
 				model.stop()
 			}
 			.onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification), perform: { _ in
-				logger.log("Received notification that app will terminate")
+				logAnomaly("WhisperView in scene \(sceneDelegate.id) has been told application will quit")
 				quitWhisperView()
 			})
 			.onChange(of: appStatus.appIsQuitting) {
 				if appStatus.appIsQuitting {
 					logger.log("App has been told to quit")
+					quitWhisperView()
+				}
+			}
+			.onChange(of: appStatus.sceneIsQuitting) {
+				if appStatus.sceneIsQuitting[sceneDelegate.id] == true {
+					logAnomaly("WhisperView in scene \(sceneDelegate.id) has been told window is being detached")
 					quitWhisperView()
 				}
 			}
@@ -303,7 +310,6 @@ struct WhisperView: View {
 			logger.log("Whisper view is already terminating")
 			return
 		}
-		logAnomaly("Whisper view is terminating in response to quit signal")
 		viewHasRespondedToQuit = true
 		model.stop()
 	}

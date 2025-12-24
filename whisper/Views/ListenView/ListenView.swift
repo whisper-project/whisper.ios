@@ -10,6 +10,8 @@ struct ListenView: View {
 	@Environment(\.colorScheme) var colorScheme
 	@Environment(\.dynamicTypeSize) var dynamicTypeSize
 	@Environment(\.scenePhase) var scenePhase
+	@EnvironmentObject var sceneDelegate: SceneDelegate
+
 	@AppStorage("newest_whisper_location_preference") var liveWindowPosition: String?
 	@AppStorage("hear_typing_setting") var hearTyping: Bool?
 
@@ -80,10 +82,6 @@ struct ListenView: View {
 				logger.log("ListenView disappeared")
 				self.model.stop()
 			}
-			.onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification), perform: { _ in
-				logger.log("Received notification that app will terminate")
-				quitListenView()
-			})
 			.onChange(of: hearTyping) {
 				if hearTyping == nil || hearTyping == false {
 					model.stopTypingSound()
@@ -91,7 +89,13 @@ struct ListenView: View {
 			}
 			.onChange(of: appStatus.appIsQuitting) {
 				if appStatus.appIsQuitting {
-					logger.log("App has been told to quit")
+					logAnomaly("ListenView in scene \(sceneDelegate.id) has been told window is being detached")
+					quitListenView()
+				}
+			}
+			.onChange(of: appStatus.sceneIsQuitting) {
+				if appStatus.sceneIsQuitting[sceneDelegate.id] == true {
+					logger.log("Window has been told to quit")
 					quitListenView()
 				}
 			}
