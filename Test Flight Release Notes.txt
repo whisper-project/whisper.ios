@@ -597,3 +597,22 @@ Whisper now remembers exactly which state each of its windows was in, and resume
 
 Both Listeners and Whisperers should update to this build.
 ==========
+Release notes for build 2.8.4:
+This build finalizes the work on window-associated status:
+
+- Closing a whispering window saves the status of the session, including past and live text.
+
+- Closing a listening window remembers the conversation being listened to, but none of the text.
+
+- Reopening a closed window resumes the remembered session in that window (if any).
+
+- Quitting the app is just treated as "close all windows" with their state intact. When the app is next launched, all the windows will be reopened, and the window active at quit time will be resumed.
+
+- The only way a session ends is by explicit user action (hit the stop sign). Once that's done, any saved data associated with the session is cleared.
+
+Both Whisperers and Listeners should update to this build.
+
+NOTE 1: Due to changes in the way sessions are remembered, any window sessions that were saved by earlier builds will be lost when you install this build.
+
+NOTE 2: Sessions can only be saved from windows that connect over the Internet (not via Bluetooth). By default, all sessions connect over Internet only. If the Whisperer's Internet is not available but Bluetooth is, then any whisper session they start will use Bluetooth. For that session, listeners must use Bluetooth to connect (which means they will have to turn off Internet if it's available on their device).
+===========
