@@ -28,7 +28,7 @@ struct ListenControlView: View {
 			stopButton()
         }
         .dynamicTypeSize(.large)
-        .font(FontSizes.fontFor(FontSizes.minTextSize))
+		.font(FontSizes.fontFor(name: .normal))
     }
     
 	@ViewBuilder private func typingButton() -> some View {
@@ -126,7 +126,7 @@ struct ListenControlView: View {
 			.onChange(of: magnify) {
 				PreferenceData.magnifyWhenListening = magnify
 			}
-            .frame(maxWidth: 105)
+			.frame(minWidth: 135, maxWidth: 175)
             Spacer()
         }
     }
