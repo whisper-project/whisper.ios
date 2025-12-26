@@ -98,15 +98,15 @@ struct WhisperView: View {
 			.onChange(of: interjectionPrefix) { UserProfile.shared.settingsProfile.update() }
 			.onChange(of: interjectionAlert) { UserProfile.shared.settingsProfile.update() }
 			.onAppear {
-				logAnomaly("WhisperView appeared in scene \(sceneDelegate.id)")
+				logLifecycle("WhisperView appeared in scene \(sceneDelegate.id)")
 				PreferenceData.setSceneState(sceneDelegate.id, mode: "whisper", conversationId: conversation.id)
-				model.start()
+				liveText = model.start()
 				focusField = "liveText"
 				SleepControl.shared.disable(reason: "In Whisper Session")
 			}
 			.onDisappear {
 				SleepControl.shared.enable()
-				logAnomaly("WhisperView disappeared in scene \(sceneDelegate.id)")
+				logLifecycle("WhisperView disappeared in scene \(sceneDelegate.id)")
 				PreferenceData.clearSceneState(sceneDelegate.id)
 				model.stop(endSession: true)
 			}
@@ -118,7 +118,7 @@ struct WhisperView: View {
 			}
 			.onChange(of: appStatus.sceneQuit) {
 				if appStatus.sceneQuit[sceneDelegate.id] == true {
-					logAnomaly("WhisperView in scene \(sceneDelegate.id) quitting due to detach")
+					logLifecycle("WhisperView in scene \(sceneDelegate.id) quitting due to detach")
 					quitWhisperView()
 				}
 			}
@@ -305,7 +305,7 @@ struct WhisperView: View {
 
 	private func quitWhisperView() {
 		guard !viewHasRespondedToQuit else {
-			logAnomaly("Whisper view in scene \(sceneDelegate.id) is already quitting")
+			logLifecycle("Whisper view in scene \(sceneDelegate.id) is already quitting")
 			return
 		}
 		viewHasRespondedToQuit = true

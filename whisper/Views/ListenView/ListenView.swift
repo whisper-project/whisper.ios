@@ -73,14 +73,14 @@ struct ListenView: View {
 				}
 			}
 			.onAppear {
-				logAnomaly("ListenView appeared in scene \(sceneDelegate.id)")
+				logLifecycle("ListenView appeared in scene \(sceneDelegate.id)")
 				PreferenceData.setSceneState(sceneDelegate.id, mode: "listen", conversationId: conversation.id)
 				self.model.start()
 				SleepControl.shared.disable(reason: "In Listen Session")
 			}
 			.onDisappear {
 				SleepControl.shared.enable()
-				logAnomaly("ListenView disappeared in scene \(sceneDelegate.id)")
+				logLifecycle("ListenView disappeared in scene \(sceneDelegate.id)")
 				PreferenceData.clearSceneState(sceneDelegate.id)
 				self.model.stop()
 			}
@@ -91,13 +91,13 @@ struct ListenView: View {
 			}
 			.onChange(of: appStatus.appIsQuitting) {
 				if appStatus.appIsQuitting {
-					logAnomaly("App has been told to quit")
+					logLifecycle("Ending listen session in scene \(sceneDelegate.id) because app is quitting")
 					quitListenView()
 				}
 			}
 			.onChange(of: appStatus.sceneQuit) {
 				if appStatus.sceneQuit[sceneDelegate.id] == true {
-					logAnomaly("ListenView in scene \(sceneDelegate.id) quitting due to detach")
+					logLifecycle("ListenView in scene \(sceneDelegate.id) quitting due to detach")
 					quitListenView()
 				}
 			}
@@ -210,7 +210,7 @@ struct ListenView: View {
 
 	private func quitListenView() {
 		guard !viewHasRespondedToQuit else {
-			logAnomaly("Listen view in scene \(sceneDelegate.id) is already quitting")
+			logLifecycle("Listen view in scene \(sceneDelegate.id) is already quitting")
 			return
 		}
 		logger.warning("Listen view is terminating in response to quit signal")

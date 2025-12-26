@@ -26,7 +26,19 @@ final class ComboWhisperTransport: PublishTransport {
 		staggerStop(.local)
 		staggerStop(.global)
     }
-    
+
+	func canDisconnect() -> Bool {
+		let localCan = localTransport == nil || localTransport!.canDisconnect()
+		let globalCan = globalTransport == nil || globalTransport!.canDisconnect()
+		return localCan && globalCan
+	}
+
+	func disconnect() {
+		logger.log("Disconnecting combo whisper transport")
+		staggerDisconnect(.local)
+		staggerDisconnect(.global)
+	}
+
     func goToBackground() {
         localTransport?.goToBackground()
         globalTransport?.goToBackground()
@@ -140,24 +152,38 @@ final class ComboWhisperTransport: PublishTransport {
     private var globalFactory = TcpFactory.shared
     private var globalStatus: TransportStatus = .off
     private var globalTransport: TcpWhisperTransport?
-    private var remotes: [String: Remote] = [:]	// maps from remoite id to remote
+    private var remotes: [String: Remote] = [:]	// maps from remote id to remote
 	private var clients: [String: Remote] = [:]	// maps from client id to remote
     private var cancellables: Set<AnyCancellable> = []
+	private var transportStatus: TransportStatus
     private var conversation: WhisperConversation
     private var failureCallback: TransportErrorCallback?
 	private var staggerTimer: Timer?
 
-    init(_ c: WhisperConversation) {
-        logger.log("Initializing combo whisper transport")
-        self.conversation = c
-        self.localFactory.statusSubject
-            .sink(receiveValue: setLocalStatus)
-            .store(in: &cancellables)
-        self.globalFactory.statusSubject
-            .sink(receiveValue: setGlobalStatus)
-            .store(in: &cancellables)
-    }
-    
+	init(_ conversation: WhisperConversation) {
+		logger.log("Initializing combo whisper transport with status .on")
+		self.transportStatus = .on
+		self.conversation = conversation
+		self.localFactory.statusSubject
+			.sink(receiveValue: setLocalStatus)
+			.store(in: &cancellables)
+		self.globalFactory.statusSubject
+			.sink(receiveValue: setGlobalStatus)
+			.store(in: &cancellables)
+	}
+
+	init(status: TransportStatus, conversation: WhisperConversation) {
+		logger.log("Initializing combo whisper transport with status .\(status.rawValue, privacy: .public)")
+		self.transportStatus = status
+		self.conversation = conversation
+		self.localFactory.statusSubject
+			.sink(receiveValue: setLocalStatus)
+			.store(in: &cancellables)
+		self.globalFactory.statusSubject
+			.sink(receiveValue: setGlobalStatus)
+			.store(in: &cancellables)
+	}
+
     deinit {
         logger.log("Destroying combo whisper transport")
         cancellables.cancel()
@@ -181,7 +207,7 @@ final class ComboWhisperTransport: PublishTransport {
     }
     
     private func initializeTransports() {
-        if localStatus == .on {
+		if (transportStatus == .localOnly || transportStatus == .on) && localStatus == .on {
             let localTransport = LocalTransport(conversation)
             self.localTransport = localTransport
             localTransport.lostRemoteSubject
@@ -191,7 +217,7 @@ final class ComboWhisperTransport: PublishTransport {
 				.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
 				.store(in: &cancellables)
         }
-        if globalStatus == .on {
+		if (transportStatus == .globalOnly || transportStatus == .on) && globalStatus == .on {
 			let globalTransport = GlobalTransport(conversation)
 			self.globalTransport = globalTransport
 			globalTransport.lostRemoteSubject
@@ -203,28 +229,41 @@ final class ComboWhisperTransport: PublishTransport {
         }
         if localTransport == nil && globalTransport == nil {
             logger.error("No transports available for whispering")
-			failureCallback?(.endSession, "Cannot whisper unless one of Bluetooth or WiFi is available")
+			failureCallback?(.endSession, "Cannot whisper unless one of Bluetooth or wireless data is available")
         }
     }
     
 	private func staggerStart() {
 		if let global = globalTransport {
-			logger.info("Starting Internet whispering in advance of Bluetooth")
+			logger.info("Starting Global whispering in advance of Local")
 			global.start(failureCallback: self.failureCallback!)
 			staggerTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(listenerWaitTime), repeats: false) { _ in
 				// run loop will invalidate the timer
 				self.staggerTimer = nil
 				if let local = self.localTransport {
-					logger.info("Starting Bluetooth whispering after Internet")
+					logger.info("Starting Local whispering after Global")
 					local.start(failureCallback: self.failureCallback!)
 				}
 			}
 		} else if let local = localTransport {
-			logger.info("Starting only Bluetooth whispering because Internet not available")
+			logger.info("Starting only Local whispering")
 			local.start(failureCallback: failureCallback!)
 		} else {
-			logAnomaly("Cannot whisper because neither Bluetooth nor Internet is available")
-			self.failureCallback?(.endSession, "Cannot whisper because neither Bluetooth nor Internet is available")
+			logAnomaly("Cannot whisper because neither Global nor Local is available")
+			self.failureCallback?(.endSession, "Cannot whisper because all forms of networking are unavailable")
+		}
+	}
+
+	private func staggerDisconnect(_ kind: TransportKind) {
+		if let timer = staggerTimer {
+			staggerTimer = nil
+			timer.invalidate()
+		}
+		switch kind {
+		case .local:
+			localTransport?.disconnect()
+		case .global:
+			globalTransport?.disconnect()
 		}
 	}
 
@@ -241,7 +280,7 @@ final class ComboWhisperTransport: PublishTransport {
 		}
 	}
 
-private func removeRemote(remote: any TransportRemote) {
+	private func removeRemote(remote: any TransportRemote) {
         guard let removed = remotes.removeValue(forKey: remote.id) else {
 			logAnomaly("Ignoring drop of unknown remote \(remote.id)", kind: remote.kind)
             return

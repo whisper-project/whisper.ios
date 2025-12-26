@@ -23,17 +23,32 @@ struct RootView: View {
 				   actions: { Button("OK", action: { })}, message: { Text(warningMessage) })
 			.onAppear {
 				if let state = PreferenceData.getSceneState(sceneDelegate.id) {
-					if state.mode == "whisper", let c = profile.whisperProfile.getConversation(state.conversationId) {
-						mode = .whisper
-						conversation = c
-						logAnomaly("Resuming whisper conversation \(c.id) in scene \(sceneDelegate.id)")
-					} else if state.mode == "listen", let c = profile.listenProfile.getConversation(state.conversationId) {
-						mode = .listen
-						conversation = c
-						logAnomaly("Resuming listen conversation \(c.id) in scene \(sceneDelegate.id)")
+					if state.mode == "whisper" {
+						if let c = profile.whisperProfile.getConversation(state.conversationId) {
+							mode = .whisper
+							conversation = c
+							logLifecycle("Resuming whisper conversation \(c.id) in scene \(sceneDelegate.id)")
+						} else {
+							logAnomaly("Found a 'whisper' state for a non-existent conversation \(state.conversationId)")
+						}
+					} else if state.mode == "listen" {
+						if let c = profile.listenProfile.getConversation(state.conversationId) {
+							mode = .listen
+							conversation = c
+							logLifecycle("Resuming listen conversation \(c.id) in scene \(sceneDelegate.id)")
+						} else if let wc = profile.whisperProfile.getConversation(state.conversationId) {
+							let c = profile.listenProfile.fromMyWhisperConversation(wc)
+							mode = .listen
+							conversation = c
+							logLifecycle("Resuming owned listen conversation \(c.id) in scene \(sceneDelegate.id)")
+						} else {
+							logAnomaly("Found a 'listen' state for a non-existent conversation \(state.conversationId)")
+						}
+					} else {
+						logAnomaly("Found an illegal mode in the scene state: \(state.mode)")
 					}
 				} else {
-					logAnomaly("No conversation to resume in scene \(sceneDelegate.id)")
+					logLifecycle("No conversation to resume in scene \(sceneDelegate.id)")
 				}
 				profile.update()
 			}
@@ -51,7 +66,7 @@ struct RootView: View {
 					return
 				}
 				if mode == .ask {
-					logAnomaly("Opening conversation in existing scene: \(convo.id) (\(convo.name))")
+					logLifecycle("Opening conversation in existing scene: \(convo.id) (\(convo.name))")
 					conversation = convo
 					mode = .listen
 				} else if (supportsMultipleWindows) {

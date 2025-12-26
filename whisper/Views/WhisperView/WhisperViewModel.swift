@@ -98,24 +98,34 @@ final class WhisperViewModel: ObservableObject {
     
     // MARK: View entry points
     
-    func start() {
-		logAnomaly("Starting Whisper session for conversation \(conversation.id) (\(conversation.name))")
-        resetText()
+    func start() -> String {
+		if transport.canDisconnect(), let textHistory = PreferenceData.getTextHistory(conversation.id) {
+			logLifecycle("Resuming Whisper session for conversation \(conversation.id) (\(conversation.name))")
+			self.pastText.setFromText(textHistory.past)
+			self.liveText = textHistory.live
+		} else {
+			logLifecycle("Starting Whisper session for conversation \(conversation.id) (\(conversation.name))")
+			resetText()
+		}
         refreshStatusText()
         transport.start(failureCallback: signalConnectionError)
+		return liveText
     }
     
 	func stop(endSession: Bool = false) {
-		if endSession {
-			logAnomaly("Ending Whisper session for conversation \(conversation.id) (\(conversation.name))")
+		if endSession || !transport.canDisconnect() {
+			logLifecycle("Ending Whisper session for conversation \(conversation.id) (\(conversation.name))")
+			PreferenceData.clearContentId(conversation.id)
+			PreferenceData.clearTextHistory(conversation.id)
+			transport.stop()
 		} else {
-			logAnomaly("Suspending Whisper session for conversation \(conversation.id) (\(conversation.name))")
+			logLifecycle("Suspending Whisper session for conversation \(conversation.id) (\(conversation.name))")
+			PreferenceData.setTextHistory(conversation.id, past: pastText.getText(), live: liveText)
+			transport.disconnect()
 		}
-        transport.stop()
         resetText()
         refreshStatusText()
 		if endSession {
-			PreferenceData.clearContentId(conversation.id)
 		}
     }
 

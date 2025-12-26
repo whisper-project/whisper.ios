@@ -97,7 +97,7 @@ final class ListenViewModel: ObservableObject {
     
     // MARK: View entry points
     func start() {
-		logAnomaly("Starting listen session for \(conversation.id) (\(conversation.name))")
+		logLifecycle("Starting listen session for \(conversation.id) (\(conversation.name))")
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if error != nil {
@@ -112,7 +112,7 @@ final class ListenViewModel: ObservableObject {
     }
     
     func stop() {
-		logAnomaly("Ending listen session for \(conversation.id) (\(conversation.name))")
+		logLifecycle("Ending listen session for \(conversation.id) (\(conversation.name))")
 		stopTypingSound()
 		transport.stop()
 		whisperer = nil
@@ -320,8 +320,8 @@ final class ListenViewModel: ObservableObject {
 			let conversation = profile.addForInvite(info: info)
 			let candidate = candidateFor(remote: remote, info: info, conversation: conversation)
 			if whisperer === candidate {
-				logAnomaly("Received second approval for the same conversation", kind: candidate.remote.kind)
 				// Whisperer must have restarted, so let them know we're in the conversation
+				logLifecycle("Listener \(PreferenceData.clientId) is rejoining conversation \(conversation.id) (\(conversation.name))")
 				let chunk = WhisperProtocol.ProtocolChunk.joining(conversation)
 				transport.sendControl(remote: candidate.remote, chunk: chunk)
 			} else {

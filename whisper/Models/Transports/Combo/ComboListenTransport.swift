@@ -102,13 +102,14 @@ final class ComboListenTransport: SubscribeTransport {
 		}
     }
     
-	private var conversation: ListenConversation
 	private var localFactory = BluetoothFactory.shared
 	private var localStatus: TransportStatus = .off
 	private var localTransport: LocalTransport?
 	private var globalFactory = TcpFactory.shared
 	private var globalStatus: TransportStatus = .off
 	private var globalTransport: GlobalTransport?
+	private var transportStatus: TransportStatus
+	private var conversation: ListenConversation
 	private var staggerTimer: Timer?
 	private var remotes: [String: Remote] = [:]	// maps from remote id to remote
 	private var clients: [String: Remote] = [:]	// maps from client id to remote
@@ -116,7 +117,8 @@ final class ComboListenTransport: SubscribeTransport {
 	private var failureCallback: TransportErrorCallback?
 
     init(_ conversation: ListenConversation) {
-        logger.log("Initializing combo listen transport")
+		logger.log("Initializing combo listen transport with status .on")
+		self.transportStatus = .on
 		self.conversation = conversation
 		self.localFactory.statusSubject
 			.sink(receiveValue: setLocalStatus)
@@ -126,6 +128,18 @@ final class ComboListenTransport: SubscribeTransport {
 			.store(in: &cancellables)
     }
     
+	init(status: TransportStatus, conversation: ListenConversation) {
+		logger.log("Initializing combo listen transport with status .\(status.rawValue, privacy: .public)")
+		self.transportStatus = status
+		self.conversation = conversation
+		self.localFactory.statusSubject
+			.sink(receiveValue: setLocalStatus)
+			.store(in: &cancellables)
+		self.globalFactory.statusSubject
+			.sink(receiveValue: setGlobalStatus)
+			.store(in: &cancellables)
+	}
+
     deinit {
         logger.log("Destroying combo listen transport")
         cancellables.cancel()
@@ -157,20 +171,7 @@ final class ComboListenTransport: SubscribeTransport {
 	}
 
 	private func initializeTransports() {
-		if globalStatus == .on {
-			let globalTransport = GlobalTransport(conversation)
-			self.globalTransport = globalTransport
-			globalTransport.lostRemoteSubject
-				.sink { [weak self] in self?.removeRemote(remote: $0) }
-				.store(in: &cancellables)
-			globalTransport.contentSubject
-				.sink { [weak self] in self?.receiveContentChunk($0) }
-				.store(in: &cancellables)
-			globalTransport.controlSubject
-				.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
-				.store(in: &cancellables)
-		}
-		if localStatus == .on {
+		if (transportStatus == .localOnly || transportStatus == .on) && localStatus == .on {
 			let localTransport = LocalTransport(conversation)
 			self.localTransport = localTransport
 			localTransport.lostRemoteSubject
@@ -183,9 +184,22 @@ final class ComboListenTransport: SubscribeTransport {
 				.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
 				.store(in: &cancellables)
 		}
+		if (transportStatus == .globalOnly || transportStatus == .on) && globalStatus == .on {
+			let globalTransport = GlobalTransport(conversation)
+			self.globalTransport = globalTransport
+			globalTransport.lostRemoteSubject
+				.sink { [weak self] in self?.removeRemote(remote: $0) }
+				.store(in: &cancellables)
+			globalTransport.contentSubject
+				.sink { [weak self] in self?.receiveContentChunk($0) }
+				.store(in: &cancellables)
+			globalTransport.controlSubject
+				.sink { [weak self] in self?.receiveControlChunk(remote: $0.remote, chunk: $0.chunk) }
+				.store(in: &cancellables)
+		}
 		if localTransport == nil && globalTransport == nil {
-			logger.error("No transports available for whispering")
-			failureCallback?(.endSession, "Cannot whisper unless one of Bluetooth or WiFi is available")
+			logger.error("No transports available for listening")
+			failureCallback?(.endSession, "Cannot listen unless one of Bluetooth or wireless data is available")
 		}
 	}
 

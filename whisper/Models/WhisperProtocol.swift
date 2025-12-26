@@ -358,9 +358,18 @@ func logControlChunk(sentOrReceived: String, chunk: WhisperProtocol.ProtocolChun
 	Data.executeJSONRequest(request, handler: handler)
 }
 
+func logLifecycle(_ message: String) {
+	logger.info("Lifecycle event reported: \(message, privacy: .public)")
+	sendClientLogMessage(message, type: "Lifecycle", level: "info")
+}
+
 func logAnomaly(_ message: String, kind: TransportKind? = nil) {
-	let kindString = kind == nil ? "Lifecycle" : kind == .global ? "TCP" : "Bluetooth"
+	let kindString = kind == nil ? "Runtime" : kind == .global ? "TCP" : "Bluetooth"
 	logger.error("\(kindString, privacy: .public) anomaly reported: \(message, privacy: .public)")
+	sendClientLogMessage(message, type: kindString, level: "error")
+}
+
+func sendClientLogMessage(_ message: String, type: String, level: String) {
 	let path = "/api/v2/logAnomaly"
 	guard let url = URL(string: PreferenceData.whisperServer + path) else {
 		fatalError("Can't create URL for anomaly logging")
@@ -368,7 +377,8 @@ func logAnomaly(_ message: String, kind: TransportKind? = nil) {
 	var request = URLRequest(url: url)
 	let localValue = [
 		"clientId": PreferenceData.clientId,
-		"kind": kindString,
+		"kind": type,
+		"level": level,
 		"message": message
 	]
 	guard let localData = try? JSONSerialization.data(withJSONObject: localValue) else {

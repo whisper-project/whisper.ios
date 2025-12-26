@@ -102,7 +102,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         } catch (let err) {
 			logger.error("Failed to set audio session category: \(err, privacy: .public)")
         }
-        logger.info("Registering for remote notifications")
+        logLifecycle("Registering for remote notifications")
         application.registerForRemoteNotifications()
         return true
     }
@@ -140,7 +140,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 			if response.statusCode == 201 || response.statusCode == 204 {
                 logger.info("Successful post of APNs token")
 				if response.statusCode == 201 {
-					logger.info("Server reponse forces reset of client secret and turns on packet logging")
+					logLifecycle("Server reponse forces reset of client secret and turns on packet logging")
 					// Our secret has gone out of sync with server, it will create a new one
 					// and post it to us.  Until that happens, we need to use our last
 					// secret because the server doesn't know the current secret.
@@ -215,7 +215,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
 	func applicationWillTerminate(_ application: UIApplication) {
-		logAnomaly("App is terminating")
+		logLifecycle("App is terminating")
 		let shared = AppStatus.shared
 		shared.appIsQuitting = true
 	}
@@ -229,7 +229,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 	func application(_ application: UIApplication, didDiscardSceneSessions: Set<UISceneSession>) {
 		for session in didDiscardSceneSessions {
 			if let delegate = session.scene?.delegate as? SceneDelegate {
-				logAnomaly("Discarded scene \(delegate.id)")
+				logLifecycle("Discarded scene \(delegate.id)")
 				PreferenceData.clearSceneState(delegate.id)
 			}
 		}
@@ -241,12 +241,14 @@ class SceneDelegate: UIResponder, ObservableObject, UIWindowSceneDelegate {
 
 	func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options _ignore: UIScene.ConnectionOptions) {
 		id = session.persistentIdentifier
-		logAnomaly("Connected scene \(id)")
+		logLifecycle("Connected scene \(id)")
 	}
 
 	func sceneDidDisconnect(_ scene: UIScene) {
-		logAnomaly("Disconnected scene \(id)")
-		AppStatus.shared.sceneQuit[id] = true
+		logLifecycle("Disconnected scene \(id)")
+		var newQuit = AppStatus.shared.sceneQuit
+		newQuit[id] = true
+		AppStatus.shared.sceneQuit = newQuit
 	}
 
 	func sceneDidBecomeActive(_ scene: UIScene) {
@@ -260,7 +262,7 @@ class SceneDelegate: UIResponder, ObservableObject, UIWindowSceneDelegate {
 
 // following code from https://stackoverflow.com/a/66394826/558006
 func restartApplication() {
-	logAnomaly("App is restarting")
+	logLifecycle("User is requesting restart of the app")
 
 	let content = UNMutableNotificationContent()
 	content.title = "Whisper app is ready to launch"

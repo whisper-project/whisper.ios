@@ -67,7 +67,7 @@ protocol Transport {
 
     func start(failureCallback: @escaping TransportErrorCallback)
     func stop()
-    
+
     func goToBackground()
     func goToForeground()
     
@@ -78,6 +78,9 @@ protocol Transport {
 
 protocol PublishTransport: Transport {
 	init(_ conversation: WhisperConversation)
+
+	func canDisconnect() -> Bool
+	func disconnect()
 
 	func authorize(remote: Remote)
 	func deauthorize(remote: Remote)

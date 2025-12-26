@@ -27,7 +27,16 @@ final class BluetoothWhisperTransport: PublishTransport {
         stopDiscovery()
         leaveConversation()
     }
-    
+
+	func canDisconnect() -> Bool {
+		return false
+	}
+
+	func disconnect() {
+		logger.log("Cannot disconnect Bluetooth whisper transport, so stopping instead")
+		stop()
+	}
+
     func goToBackground() {
         guard !isInBackground else {
             return

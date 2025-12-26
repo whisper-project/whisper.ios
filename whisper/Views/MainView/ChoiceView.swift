@@ -43,7 +43,7 @@ struct ChoiceView: View {
 			VStack(spacing: 40) {
 				nameForm()
 				if (showWhisperButtons) {
-					if transportStatus != .on {
+					if transportStatus != .globalOnly {
 						transportStatusView()
 					}
 					HStack(spacing: 30) {
@@ -218,7 +218,10 @@ struct ChoiceView: View {
 					profile.update()
 				}
 			}
-			.onAppear(perform: profile.update)
+			.onAppear{
+				logLifecycle("Choice view appears on scene \(sceneDelegate.id)")
+				profile.update()
+			}
 			.onChange(of: window, initial: true) {
 				window?.windowScene?.title = nil
 			}
@@ -251,23 +254,17 @@ struct ChoiceView: View {
 				.font(FontSizes.fontFor(name: .normal))
 				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 		case .localOnly:
-			Text("Bluetooth ready, Wireless not available")
+			Text("Using bluetooth data (wireless not available)")
 				.font(FontSizes.fontFor(name: .normal))
 				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 		case .globalOnly:
-			Text("Bluetooth not available, Wireless available")
+			Text("Using wireless data")
 				.font(FontSizes.fontFor(name: .normal))
 				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-		case .disabled:
-			Link("Bluetooth not enabled, Wireless available", destination: settingsUrl)
-				.font(FontSizes.fontFor(name: .normal))
+		default:
+			Text("Error obtaining network status. Please restart the app.")
+				.font(FontSizes.fontFor(name: .large))
 				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-		case .waiting:
-			Text("Waiting for Bluetooth, Wireless available")
-				.font(FontSizes.fontFor(name: .normal))
-				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-		case .on:
-			fatalError("Can't happen: transport status is .on")
 		}
 	}
 
