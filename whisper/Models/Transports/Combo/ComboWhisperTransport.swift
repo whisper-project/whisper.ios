@@ -147,10 +147,10 @@ final class ComboWhisperTransport: PublishTransport {
     }
     
     private var localFactory = BluetoothFactory.shared
-    private var localStatus: TransportStatus = .off
+    private var localStatus: TransportStatus
     private var localTransport: LocalTransport?
     private var globalFactory = TcpFactory.shared
-    private var globalStatus: TransportStatus = .off
+    private var globalStatus: TransportStatus
     private var globalTransport: TcpWhisperTransport?
     private var remotes: [String: Remote] = [:]	// maps from remote id to remote
 	private var clients: [String: Remote] = [:]	// maps from client id to remote
@@ -161,9 +161,14 @@ final class ComboWhisperTransport: PublishTransport {
 	private var staggerTimer: Timer?
 
 	init(_ conversation: WhisperConversation) {
-		logger.log("Initializing combo whisper transport with status .on")
+		logger.log("Initializing combo whisper transport with default status of .on")
 		self.transportStatus = .on
+		if PreferenceData.forceBluetooth {
+			self.transportStatus = .localOnly
+		}
 		self.conversation = conversation
+		self.localStatus = self.localFactory.statusSubject.value
+		self.globalStatus = self.globalFactory.statusSubject.value
 		self.localFactory.statusSubject
 			.sink(receiveValue: setLocalStatus)
 			.store(in: &cancellables)
@@ -174,8 +179,13 @@ final class ComboWhisperTransport: PublishTransport {
 
 	init(status: TransportStatus, conversation: WhisperConversation) {
 		logger.log("Initializing combo whisper transport with status .\(status.rawValue, privacy: .public)")
-		self.transportStatus = status
+		self.transportStatus = .globalOnly
+		if status == .localOnly || PreferenceData.forceBluetooth {
+			self.transportStatus = .localOnly
+		}
 		self.conversation = conversation
+		self.localStatus = self.localFactory.statusSubject.value
+		self.globalStatus = self.globalFactory.statusSubject.value
 		self.localFactory.statusSubject
 			.sink(receiveValue: setLocalStatus)
 			.store(in: &cancellables)

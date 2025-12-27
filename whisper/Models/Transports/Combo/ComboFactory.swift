@@ -28,18 +28,22 @@ final class ComboFactory: TransportFactory {
     private var localFactory = BluetoothFactory.shared
     private var globalFactory = TcpFactory.shared
     
-    private var localStatus: TransportStatus = .off
-    private var globalStatus: TransportStatus = .on
+    private var localStatus: TransportStatus
+    private var globalStatus: TransportStatus
 
     private var cancellables: Set<AnyCancellable> = []
 
     init() {
+		localStatus = localFactory.statusSubject.value
+		globalStatus = globalFactory.statusSubject.value
+		comboStatus = compositeStatus()
         localFactory.statusSubject
             .sink(receiveValue: setLocalStatus)
             .store(in: &cancellables)
         globalFactory.statusSubject
             .sink(receiveValue: setGlobalStatus)
             .store(in: &cancellables)
+		statusSubject.send(comboStatus)
     }
     
     deinit {
@@ -60,21 +64,18 @@ final class ComboFactory: TransportFactory {
     }
     
     private func compositeStatus() -> TransportStatus {
-		guard globalStatus == .off else {
-			return .globalOnly
-		}
         switch localStatus {
 		case .off:
-			return .off
+			return globalStatus == .off ? .off : .globalOnly
 		case .waiting:
-			return .off
+			return globalStatus == .off ? .off : .globalOnly
         case .disabled:
-			return .off
+			return globalStatus == .off ? .off : .globalOnly
         case .on:
-			return .localOnly
+			return globalStatus == .off ? .localOnly : .on
 		default:
 			logAnomaly("Can't happen: localStatus was \(localStatus), assuming .off")
-			return .off
+			return globalStatus == .off ? .off : .globalOnly
         }
     }
 }

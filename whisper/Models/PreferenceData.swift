@@ -394,6 +394,16 @@ struct PreferenceData {
 		}
 	}
 
+	/// Connection settings
+	static var forceBluetooth: Bool {
+		get {
+			return defaults.bool(forKey: "force_bluetooth_setting")
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "force_bluetooth_setting")
+		}
+	}
+
 	/// Preferences
 	static private var whisperTapPreference: String {
 		get {

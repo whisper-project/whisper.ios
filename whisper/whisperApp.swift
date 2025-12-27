@@ -18,7 +18,7 @@ let platformInfo = UIDevice.current.userInterfaceIdiom == .phone ? "phone" : "pa
 let versionInfo = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "??"
 let buildInfo = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "??"
 #if DEBUG
-let versionString = buildInfo
+let versionString = "\(versionInfo).\(Int(buildInfo.suffix(4))!)β"
 #else
 let versionString = "\(versionInfo).\(Int(buildInfo.suffix(4))!)"
 #endif
@@ -80,15 +80,19 @@ let logger = Logger()
 @main
 struct whisperApp: App {
 	@UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
+
+	@StateObject private var orientationInfo: OrientationInfo = .init()
+
     var body: some Scene {
         WindowGroup {
 			RootView()
+				.environmentObject(orientationInfo)
         }
 		.handlesExternalEvents(matching: [PreferenceData.publisherUrlEventMatchString])
 
 		WindowGroup(for: ListenConversation.self) { $conversation in
 			LinkView(conversation: conversation)
+				.environmentObject(orientationInfo)
 		}
     }
 }

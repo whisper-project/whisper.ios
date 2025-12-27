@@ -103,10 +103,10 @@ final class ComboListenTransport: SubscribeTransport {
     }
     
 	private var localFactory = BluetoothFactory.shared
-	private var localStatus: TransportStatus = .off
+	private var localStatus: TransportStatus
 	private var localTransport: LocalTransport?
 	private var globalFactory = TcpFactory.shared
-	private var globalStatus: TransportStatus = .off
+	private var globalStatus: TransportStatus
 	private var globalTransport: GlobalTransport?
 	private var transportStatus: TransportStatus
 	private var conversation: ListenConversation
@@ -119,7 +119,12 @@ final class ComboListenTransport: SubscribeTransport {
     init(_ conversation: ListenConversation) {
 		logger.log("Initializing combo listen transport with status .on")
 		self.transportStatus = .on
+		if PreferenceData.forceBluetooth {
+			self.transportStatus = .localOnly
+		}
 		self.conversation = conversation
+		self.localStatus = self.localFactory.statusSubject.value
+		self.globalStatus = self.globalFactory.statusSubject.value
 		self.localFactory.statusSubject
 			.sink(receiveValue: setLocalStatus)
 			.store(in: &cancellables)
@@ -130,8 +135,13 @@ final class ComboListenTransport: SubscribeTransport {
     
 	init(status: TransportStatus, conversation: ListenConversation) {
 		logger.log("Initializing combo listen transport with status .\(status.rawValue, privacy: .public)")
-		self.transportStatus = status
+		self.transportStatus = .globalOnly
+		if status == .localOnly || PreferenceData.forceBluetooth {
+			self.transportStatus = .localOnly
+		}
 		self.conversation = conversation
+		self.localStatus = self.localFactory.statusSubject.value
+		self.globalStatus = self.globalFactory.statusSubject.value
 		self.localFactory.statusSubject
 			.sink(receiveValue: setLocalStatus)
 			.store(in: &cancellables)
