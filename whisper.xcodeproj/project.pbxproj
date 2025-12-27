@@ -31,6 +31,7 @@
 		37541D5A2C71150F00922C01 /* FavoritesUseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37541D592C71150F00922C01 /* FavoritesUseView.swift */; };
 		37541D5C2C71172C00922C01 /* WhisperControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37541D5B2C71172C00922C01 /* WhisperControlView.swift */; };
 		376388CD29DDFB77006E5686 /* ListenStatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376388CC29DDFB77006E5686 /* ListenStatusTextView.swift */; };
+		376C07482EFF41F900095437 /* OrientationInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376C07472EFF41F900095437 /* OrientationInfo.swift */; };
 		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
 		377237252BB8F5BE0062A833 /* LinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377237242BB8F5BE0062A833 /* LinkView.swift */; };
 		3775A13A29AD4EB6007159F5 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3775A13929AD4EB6007159F5 /* Settings.bundle */; };
@@ -108,6 +109,7 @@
 		37541D5B2C71172C00922C01 /* WhisperControlView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WhisperControlView.swift; sourceTree = "<group>"; };
 		37594DCA29C224660043C152 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		376388CC29DDFB77006E5686 /* ListenStatusTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenStatusTextView.swift; sourceTree = "<group>"; };
+		376C07472EFF41F900095437 /* OrientationInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationInfo.swift; sourceTree = "<group>"; };
 		3771F83429DD2F900011419E /* FontSizes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizes.swift; sourceTree = "<group>"; };
 		377237242BB8F5BE0062A833 /* LinkView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LinkView.swift; sourceTree = "<group>"; };
 		3775A13929AD4EB6007159F5 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
@@ -300,6 +302,7 @@
 		37763D1329AC034B0051CFE5 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				376C07472EFF41F900095437 /* OrientationInfo.swift */,
 				3771F83429DD2F900011419E /* FontSizes.swift */,
 				377D71142A913E2E009B416F /* PreferenceData.swift */,
 				37C5142329CA2B44001A121B /* PastTextModel.swift */,
@@ -562,6 +565,7 @@
 				37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */,
 				37159AA82C6A9488005CB922 /* HasherFNV1a.swift in Sources */,
 				37472EBB2BF43381005713E1 /* WhisperTranscriptView.swift in Sources */,
+				376C07482EFF41F900095437 /* OrientationInfo.swift in Sources */,
 				373748792AD66D150053858B /* TcpMonitor.swift in Sources */,
 				37D78A182B2FE017002494CD /* WhisperProfileDetailView.swift in Sources */,
 				37CBBD0C2AF8CAC7006AE49F /* UserProfile.swift in Sources */,
@@ -715,7 +719,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20800004;
+				CURRENT_PROJECT_VERSION = 20800006;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -760,7 +764,7 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20800004;
+				CURRENT_PROJECT_VERSION = 20800006;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;

@@ -616,3 +616,23 @@ NOTE 1: Due to changes in the way sessions are remembered, any window sessions t
 
 NOTE 2: Sessions can only be saved from windows that connect over the Internet (not via Bluetooth). By default, all sessions connect over Internet only. If the Whisperer's Internet is not available but Bluetooth is, then any whisper session they start will use Bluetooth. For that session, listeners must use Bluetooth to connect (which means they will have to turn off Internet if it's available on their device).
 ===========
+Release notes for build 2.8.5:
+This build offers much clearer controls over the use of Internet vs. Bluetooth:
+
+- There is a new setting, "Always use Bluetooth", which is OFF by default but can be used to force the use of Bluetooth if Internet connectivity is flaky or not available.
+
+- In the home screen, the app always displays whether Internet or Bluetooth will be used for the next session, and the display also offers the chance to switch back and forth so you don't have to go to the Settings screen.
+
+This build also makes a number of cosmetic fixes:
+
+- The entire home screen now fits on a phone in landscape mode.
+
+- On iPads, the "Large Sizes" toggle in the Whisper and Listen control areas is no longer truncated.
+
+- The version of the app now appears in the "About" button, rather than as a separate string at the bottom of the home screen.
+
+- The "Larger Type" option for the Home Screen is not available on the phone, because there's not really enough space to accomodate the larger type. This removal makes it impossible to increase the sizes of the Favorites and Profile Sharing screens on phones. If that presents a problem for you, please submit feedback via TestFlight to the developer, or email him directly at dan@whisper-project.org.
+=========
+Release notes for build 2.8.6:
+This build fixes a bug which caused whisper session data to be lost when the app was first put into the background and the quit. Session data should be reliably saved in this build in all cases. Please test that.
+=========
