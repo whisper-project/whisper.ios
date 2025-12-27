@@ -71,6 +71,7 @@ final class WhisperViewModel: ObservableObject {
 	private var typingPlayer: AVAudioPlayer?
 	private var playingTypingSound = false
 	private var contentId: String
+	private var isInBackground: Bool = false
 
 	let up = UserProfile.shared.whisperProfile
 	let fp = UserProfile.shared.favoritesProfile
@@ -120,7 +121,6 @@ final class WhisperViewModel: ObservableObject {
 			transport.stop()
 		} else {
 			logLifecycle("Suspending Whisper session for conversation \(conversation.id) (\(conversation.name))")
-			PreferenceData.setTextHistory(conversation.id, past: pastText.getText(), live: liveText)
 			transport.disconnect()
 		}
         resetText()
@@ -307,10 +307,20 @@ final class WhisperViewModel: ObservableObject {
     }
 
     func wentToBackground() {
-        transport.goToBackground()
+		guard !isInBackground else {
+			return
+		}
+		isInBackground = true
+		transport.goToBackground()
+		logLifecycle("Saving Whisper session for conversation \(conversation.id) (\(conversation.name))")
+		PreferenceData.setTextHistory(conversation.id, past: pastText.getText(), live: liveText)
     }
     
     func wentToForeground() {
+		guard isInBackground else {
+			return
+		}
+		isInBackground = false
         transport.goToForeground()
     }
 

@@ -228,7 +228,9 @@ struct PreferenceData {
 		}
 	}
 	static func setTextHistory(_ conversationId: String, past: String, live: String) {
-		textHistory[conversationId] = [past, live]
+		let summary = "past: \(past.count), live: \(live.count), ts: \(Date())"
+		textHistory[conversationId] = [past, live, summary]
+		logLifecycle("Text history summary saved for conversation \(conversationId): \(summary)")
 		saveTextHistory()
 	}
 	static func clearTextHistory(_ conversationId: String) {
@@ -240,7 +242,8 @@ struct PreferenceData {
 			logger.debug("No textHistory for conversation \(conversationId)")
 			return nil
 		}
-		logger.debug("Retrieved textHistory for conversation \(conversationId)")
+		let summary = entry.count > 2 ? entry[2] : "<no summary>"
+		logLifecycle("Text history summary retrieved for conversation \(conversationId): \(summary)")
 		return (past: entry[0], live: entry[1])
 	}
 

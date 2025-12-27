@@ -137,6 +137,9 @@ struct WhisperView: View {
 					model.wentToBackground()
 				case .inactive:
 					logger.log("Went inactive")
+					focusField = nil
+					inBackground = true
+					model.wentToBackground()
 				case .active:
 					logger.log("Went to foreground")
 					focusField = "liveText"

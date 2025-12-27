@@ -259,6 +259,10 @@ class SceneDelegate: UIResponder, ObservableObject, UIWindowSceneDelegate {
 		logger.debug("Activated scene \(self.id, privacy: .public)")
 	}
 
+	func sceneDidBecomeInactive(_ scene: UIScene) {
+		logger.debug("Deactivated scene \(self.id, privacy: .public)")
+	}
+
 	func sceneDidEnterBackground(_ scene: UIScene) {
 		logger.debug("Backgrounded scene \(self.id, privacy: .public)")
 	}
