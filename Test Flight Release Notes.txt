@@ -636,3 +636,12 @@ This build also makes a number of cosmetic fixes:
 Release notes for build 2.8.6:
 This build fixes a bug which caused whisper session data to be lost when the app was first put into the background and the quit. Session data should be reliably saved in this build in all cases. Please test that.
 =========
+Release notes for build 2.8.7:
+This build (finally) brings the two features requested most often by users:
+
+- In the list of Whisper conversations (gotten to by long-pressing the Whisper button), clicking on the name now starts that conversation (rather than showing a detail view). If you want to edit the conversation details (or see transcripts, etc.), you now click the edit icon to the right of the conversation in the list.
+
+- In the list of Listen conversations (gotten to by long-pressing the Listen button), clicking on the name now starts listening to that conversation.
+
+Enjoy!
+==========
