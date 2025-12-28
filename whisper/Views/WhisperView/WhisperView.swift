@@ -33,8 +33,8 @@ struct WhisperView: View {
 	@State private var showFavorites: Bool = PreferenceData.showFavorites
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
+	@State private var inactive: Bool = false
 	@State private var window: Window?
-	@StateObject private var appStatus = AppStatus.shared
 	@State private var viewHasRespondedToQuit = false
 
     init(mode: Binding<OperatingMode>, conversation: WhisperConversation) {
@@ -100,6 +100,7 @@ struct WhisperView: View {
 			.onAppear {
 				logLifecycle("WhisperView appeared in scene \(sceneDelegate.id)")
 				PreferenceData.setSceneState(sceneDelegate.id, mode: "whisper", conversationId: conversation.id)
+				sceneDelegate.sceneModel = model
 				liveText = model.start()
 				focusField = "liveText"
 				SleepControl.shared.disable(reason: "In Whisper Session")
@@ -109,15 +110,10 @@ struct WhisperView: View {
 				logLifecycle("WhisperView disappeared in scene \(sceneDelegate.id)")
 				PreferenceData.clearSceneState(sceneDelegate.id)
 				model.stop(endSession: true)
+				sceneDelegate.sceneModel = nil
 			}
-			.onChange(of: appStatus.appIsQuitting) {
-				if appStatus.appIsQuitting {
-					logger.log("App has been told to quit")
-					quitWhisperView()
-				}
-			}
-			.onChange(of: appStatus.sceneQuit) {
-				if appStatus.sceneQuit[sceneDelegate.id] == true {
+			.onChange(of: sceneDelegate.disconnected) {
+				if sceneDelegate.disconnected {
 					logLifecycle("WhisperView in scene \(sceneDelegate.id) quitting due to detach")
 					quitWhisperView()
 				}
@@ -131,23 +127,23 @@ struct WhisperView: View {
 			.onChange(of: scenePhase) {
 				switch scenePhase {
 				case .background:
-					logger.log("Went to background")
+					logger.log("Whisper view went to background")
 					focusField = nil
 					inBackground = true
 					model.wentToBackground()
 				case .inactive:
-					logger.log("Went inactive")
-					focusField = nil
-					inBackground = true
-					model.wentToBackground()
+					logger.log("Whisper view went inactive")
+					inactive = true
+					model.wentInactive()
 				case .active:
-					logger.log("Went to foreground")
+					logger.log("Whisper view went to foreground")
 					focusField = "liveText"
 					inBackground = false
+					inactive = false
 					model.wentToForeground()
 				@unknown default:
 					inBackground = false
-					logger.error("Went to unknown phase: \(String(describing: scenePhase), privacy: .public)")
+					logAnomaly("Whisper view went to unknown phase: \(String(describing: scenePhase))")
 				}
 			}
 		}
@@ -308,11 +304,12 @@ struct WhisperView: View {
 
 	private func quitWhisperView() {
 		guard !viewHasRespondedToQuit else {
-			logLifecycle("Whisper view in scene \(sceneDelegate.id) is already quitting")
 			return
 		}
+		logger.warning("Whisper view is terminating in response to quit signal")
 		viewHasRespondedToQuit = true
 		model.stop()
+		sceneDelegate.sceneModel = nil
 	}
 
 	private func isOnPhone() -> Bool {

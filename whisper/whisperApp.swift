@@ -219,9 +219,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
 	func applicationWillTerminate(_ application: UIApplication) {
-		logLifecycle("App is terminating")
-		let shared = AppStatus.shared
-		shared.appIsQuitting = true
+		let task = logLifecycle("App is terminating")
+		// wait for the network task
+		for _ in 0..<100 where task.state != .completed {
+			Thread.sleep(forTimeInterval: 0.01)
+		}
 	}
 
 	func application(_ application: UIApplication, configurationForConnecting: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
@@ -242,6 +244,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
 class SceneDelegate: UIResponder, ObservableObject, UIWindowSceneDelegate {
 	@Published var id: String = ""
+	@Published var disconnected: Bool = false
+	var sceneModel: WhisperViewModel?
 
 	func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options _ignore: UIScene.ConnectionOptions) {
 		id = session.persistentIdentifier
@@ -250,13 +254,16 @@ class SceneDelegate: UIResponder, ObservableObject, UIWindowSceneDelegate {
 
 	func sceneDidDisconnect(_ scene: UIScene) {
 		logLifecycle("Disconnected scene \(id)")
-		var newQuit = AppStatus.shared.sceneQuit
-		newQuit[id] = true
-		AppStatus.shared.sceneQuit = newQuit
+		disconnected = true
 	}
 
 	func sceneDidBecomeActive(_ scene: UIScene) {
 		logger.debug("Activated scene \(self.id, privacy: .public)")
+	}
+
+	func sceneWillResignActive(_ scene: UIScene) {
+		logLifecycle("Scene \(self.id) will become inactive")
+		self.sceneModel?.saveSession()
 	}
 
 	func sceneDidBecomeInactive(_ scene: UIScene) {
@@ -285,11 +292,4 @@ func restartApplication() {
 	center.add(request)
 
 	exit(0)
-}
-
-final class AppStatus: ObservableObject {
-	static var shared: AppStatus = .init()
-
-	@Published var appIsQuitting: Bool = false
-	@Published var sceneQuit: [String: Bool] = [:]
 }

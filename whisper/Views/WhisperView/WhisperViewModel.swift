@@ -72,11 +72,13 @@ final class WhisperViewModel: ObservableObject {
 	private var playingTypingSound = false
 	private var contentId: String
 	private var isInBackground: Bool = false
+	private var isInactive: Bool = false
+	private var savedSession: Bool = true
 
 	let up = UserProfile.shared.whisperProfile
 	let fp = UserProfile.shared.favoritesProfile
 
-    init(_ conversation: WhisperConversation) {
+	init(_ conversation: WhisperConversation) {
         logger.log("Initializing WhisperView model")
 		self.conversation = conversation
 		self.contentId = PreferenceData.getContentId(conversation.id)
@@ -104,9 +106,11 @@ final class WhisperViewModel: ObservableObject {
 			logLifecycle("Resuming Whisper session for conversation \(conversation.id) (\(conversation.name))")
 			self.pastText.setFromText(textHistory.past)
 			self.liveText = textHistory.live
+			savedSession = true
 		} else {
 			logLifecycle("Starting Whisper session for conversation \(conversation.id) (\(conversation.name))")
 			resetText()
+			savedSession = false
 		}
         refreshStatusText()
         transport.start(failureCallback: signalConnectionError)
@@ -125,8 +129,6 @@ final class WhisperViewModel: ObservableObject {
 		}
         resetText()
         refreshStatusText()
-		if endSession {
-		}
     }
 
 	func sendRestart() {
@@ -143,6 +145,7 @@ final class WhisperViewModel: ObservableObject {
         guard old != new else {
             return liveText
         }
+		savedSession = false
         let chunks = WhisperProtocol.diffLines(old: old, new: new)
         for chunk in chunks {
             if chunk.isCompleteLine() {
@@ -179,6 +182,7 @@ final class WhisperViewModel: ObservableObject {
     
 	/// Repeat a line typed by the Whisperer
 	func repeatLine(_ text: String? = nil) {
+		savedSession = false
 		let line = text ?? lastLiveText
 		pastText.addLine(line)
 		if PreferenceData.speakWhenWhispering {
@@ -306,14 +310,29 @@ final class WhisperViewModel: ObservableObject {
 		refreshStatusText()
     }
 
+	func wentInactive() {
+		guard !isInactive else {
+			return
+		}
+		isInactive = true
+		saveSession()
+	}
+
+	func saveSession() {
+		guard !savedSession else {
+			return
+		}
+		savedSession = true
+		logLifecycle("Saving Whisper session for conversation \(conversation.id) (\(conversation.name))")
+		PreferenceData.setTextHistory(conversation.id, past: pastText.getText(), live: liveText)
+	}
+
     func wentToBackground() {
 		guard !isInBackground else {
 			return
 		}
 		isInBackground = true
 		transport.goToBackground()
-		logLifecycle("Saving Whisper session for conversation \(conversation.id) (\(conversation.name))")
-		PreferenceData.setTextHistory(conversation.id, past: pastText.getText(), live: liveText)
     }
     
     func wentToForeground() {

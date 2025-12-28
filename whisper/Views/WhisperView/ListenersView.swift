@@ -91,7 +91,3 @@ struct ListenersView: View {
 		model.dropListener(candidate)
 	}
 }
-
-#Preview {
-	ListenersView(model: WhisperViewModel(UserProfile.shared.whisperProfile.fallback))
-}

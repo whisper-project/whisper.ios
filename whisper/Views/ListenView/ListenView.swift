@@ -27,7 +27,6 @@ struct ListenView: View {
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
 	@State private var window: Window?
-	@StateObject private var appStatus = AppStatus.shared
 	@State private var viewHasRespondedToQuit = false
 	@State private var userStopped = false
 
@@ -89,14 +88,8 @@ struct ListenView: View {
 					model.stopTypingSound()
 				}
 			}
-			.onChange(of: appStatus.appIsQuitting) {
-				if appStatus.appIsQuitting {
-					logLifecycle("Ending listen session in scene \(sceneDelegate.id) because app is quitting")
-					quitListenView()
-				}
-			}
-			.onChange(of: appStatus.sceneQuit) {
-				if appStatus.sceneQuit[sceneDelegate.id] == true {
+			.onChange(of: sceneDelegate.disconnected) {
+				if sceneDelegate.disconnected {
 					logLifecycle("ListenView in scene \(sceneDelegate.id) quitting due to detach")
 					quitListenView()
 				}
@@ -114,20 +107,20 @@ struct ListenView: View {
 			.onChange(of: scenePhase) {
 				switch scenePhase {
 				case .background:
-					logger.log("Went to background")
+					logger.log("Listen view went to background")
 					inBackground = true
 					model.wentToBackground()
 				case .inactive:
-					logger.log("Went inactive")
+					logger.log("Listen view went inactive")
 					inBackground = false
 					model.wentToForeground()
 				case .active:
-					logger.log("Went to foreground")
+					logger.log("Listen view went to foreground")
 					inBackground = false
 					model.wentToForeground()
 				@unknown default:
 					inBackground = false
-					logger.error("Went to unknown phase: \(String(describing: scenePhase), privacy: .public)")
+					logAnomaly("Listen view went to unknown phase: \(String(describing: scenePhase))")
 				}
 			}
 		}
@@ -210,7 +203,6 @@ struct ListenView: View {
 
 	private func quitListenView() {
 		guard !viewHasRespondedToQuit else {
-			logLifecycle("Listen view in scene \(sceneDelegate.id) is already quitting")
 			return
 		}
 		logger.warning("Listen view is terminating in response to quit signal")
