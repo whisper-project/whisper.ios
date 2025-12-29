@@ -639,9 +639,28 @@ This build fixes a bug which caused whisper session data to be lost when the app
 Release notes for build 2.8.7:
 This build (finally) brings the two features requested most often by users:
 
-- In the list of Whisper conversations (gotten to by long-pressing the Whisper button), clicking on the name now starts that conversation (rather than showing a detail view). If you want to edit the conversation details (or see transcripts, etc.), you now click the edit icon to the right of the conversation in the list.
+- In the list of Whisper conversations (gotten to by long-pressing the Whisper button), clicking on a conversation's name now starts that conversation (rather than showing a detail view). If you want to edit the conversation details (or see transcripts, etc.), you now click the edit icon to the right of the conversation in the list.
 
 - In the list of Listen conversations (gotten to by long-pressing the Listen button), clicking on the name now starts listening to that conversation.
 
 Enjoy!
+==========
+Release notes for build 2.8.8:
+This build has two bug fixes:
+
+- Interjections are always supposed to be ended when the Whisperer types a carriage return. But this wasn't happening when the Whisperer had edited text in the middle of the line so his cursor wasn't at the end of the line. Instead the interjection was being split into two lines. This has been fixed.
+
+- Changing the name of a shared profile would fail. It would appear to succeed, but at the next update from the server it would revert. This was a server problem that has been fixed.
+
+This build has several cosmetic fixes:
+
+- In the list of Listen conversations for someone with a shared profile, the list of "owned" conversations still had the "ear" symbols for listening, and tapping on the name did nothing. The ears are now gone, and tapping the name starts listening (as it should).
+
+- The pop-up status for Whisperers, that appears whenever someone joins or leaves a conversation, is now big enough to show all (or at least a large number of) the Listeners. It still scrolls, so the Listener can see everyone even if the list is very long.
+
+- If the Whisperer is not keeping transcripts, the pop-up status no longer offers to send a transcript to each Listener.
+
+- If you send an active whisper or listen window to the background while a pop-up is showing, the pop-up is dismissed with no action. (This also prevents the pop-up from appearing in the snapshot shown of the window on iPad.)
+
+- The phrase "Send Listen Link" next to the share icon has been shortened to "Listen Link" everywhere it appeared.
 ==========
