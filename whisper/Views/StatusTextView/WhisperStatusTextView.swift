@@ -15,7 +15,7 @@ struct WhisperStatusTextView: View {
 		return URL(string: PreferenceData.publisherUrl(model.conversation))
 	}
 
-    private let linkText = UIDevice.current.userInterfaceIdiom == .phone ? "Link" : "Send Listen Link"
+    private let linkText = UIDevice.current.userInterfaceIdiom == .phone ? "Link" : "Listen Link"
 	private let transcriptText = UIDevice.current.userInterfaceIdiom == .phone ? "Transcript" : "Send Transcript"
 
     var body: some View {

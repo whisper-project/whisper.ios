@@ -85,14 +85,15 @@ struct WhisperView: View {
 			.onChange(of: interjecting) {
 				if interjecting {
 					pendingLiveText = liveText
-					liveText = interjectionPrefixOverride ?? PreferenceData.interjectionPrefix()
+					let interjectionStart = interjectionPrefixOverride ?? PreferenceData.interjectionPrefix()
+					liveText = model.updateLiveText(old: liveText, new: interjectionStart)
 					interjectionPrefixOverride = nil
 					model.playInterjectionSound()
 				} else {
 					if !liveText.isEmpty && liveText != PreferenceData.interjectionPrefix() {
 						liveText = model.submitLiveText()
 					}
-					liveText = pendingLiveText
+					liveText = model.updateLiveText(old: liveText, new: pendingLiveText)
 				}
 			}
 			.onChange(of: interjectionPrefix) { UserProfile.shared.settingsProfile.update() }
@@ -130,10 +131,12 @@ struct WhisperView: View {
 					logger.log("Whisper view went to background")
 					focusField = nil
 					inBackground = true
+					cancelOverlays()
 					model.wentToBackground()
 				case .inactive:
 					logger.log("Whisper view went inactive")
 					inactive = true
+					cancelOverlays()
 					model.wentInactive()
 				case .active:
 					logger.log("Whisper view went to foreground")
@@ -179,6 +182,13 @@ struct WhisperView: View {
 
 	private func doEditFavorites() {
 		editFavorites = true
+	}
+
+	private func cancelOverlays() {
+		model.showStatusDetail = false
+		model.connectionError = false
+		editFavorites = false
+		confirmStop = false
 	}
 
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
@@ -252,9 +262,12 @@ struct WhisperView: View {
 		TextEditor(text: $liveText)
 			.font(FontSizes.fontFor(size))
 			.truncationMode(.head)
-			.onChange(of: liveText) { old, new in
-				if interjecting && new == old + "\n" {
-					liveText = old
+			.onChange(of: liveText, initial: false) { old, new in
+				if interjecting && new.contains("\n") {
+					liveText = new
+					if new.hasSuffix("\n") {
+						liveText.removeLast()
+					}
 					DispatchQueue.main.async { interjecting = false }
 				} else {
 					liveText = model.updateLiveText(old: old, new: new)
@@ -299,7 +312,7 @@ struct WhisperView: View {
 	}
 
 	private func clearTyping() {
-		liveText = ""
+		liveText = model.updateLiveText(old: liveText, new: "")
 	}
 
 	private func quitWhisperView() {
