@@ -11,8 +11,6 @@ struct MainView: View {
 	@Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-	@AppStorage("main_view_large_sizes_setting") private var useLargeSizes: Bool = false
-
     @Binding var mode: OperatingMode
     @Binding var conversation: (any Conversation)?
 
@@ -22,19 +20,7 @@ struct MainView: View {
     var body: some View {
         switch mode {
         case .ask:
-            VStack {
-                Spacer()
-                ChoiceView(mode: $mode, conversation: $conversation, transportStatus: $model.status)
-                Spacer()
-				Toggle("Larger Type", isOn: $useLargeSizes)
-					.frame(maxWidth: useLargeSizes ? 220 : 175)
-                Text("v\(versionString)")
-                    .textSelection(.enabled)
-                    .font(FontSizes.fontFor(name: .xxxsmall))
-                    .foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-                    .padding(EdgeInsets(top: 20, leading: 0, bottom: 5, trailing: 0))
-            }
-			.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
+			ChoiceView(mode: $mode, conversation: $conversation, transportStatus: $model.status)
 			.alert("Conversation Paused", isPresented: $restart) {
 				Button("OK") { mode = .listen }
 				Button("Cancel") {}

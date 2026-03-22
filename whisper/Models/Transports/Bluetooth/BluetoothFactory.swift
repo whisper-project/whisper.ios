@@ -12,7 +12,7 @@ final class BluetoothFactory: NSObject, TransportFactory {
 
 	static let shared: BluetoothFactory = .init()
 
-	var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
+	var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
 
 	func publisher(_ c: WhisperConversation) -> Publisher {
 		return Publisher(c)
@@ -40,13 +40,22 @@ final class BluetoothFactory: NSObject, TransportFactory {
 	private var peripheralManager: CBPeripheralManager!
 	private var haveAddedWhisperService: Bool = false
 
-	private var central_state: CBManagerState = .unknown
-	private var peripheral_state: CBManagerState = .unknown
+	private var centralState: CBManagerState = .unknown
+	private var peripheralState: CBManagerState = .unknown
 
 	override init() {
 		super.init()
 		centralManager = .init(delegate: self, queue: .main)
 		peripheralManager = .init(delegate: self, queue: .main)
+		if CBCentralManager.authorization != .allowedAlways || CBPeripheralManager.authorization != .allowedAlways {
+			centralState = .unauthorized
+			peripheralState = .unauthorized
+			statusSubject.send(compositeStatus())
+		} else {
+			centralState = centralManager.state
+			peripheralState = peripheralManager.state
+			statusSubject.send(compositeStatus())
+		}
 	}
 
 	deinit {
@@ -135,9 +144,9 @@ final class BluetoothFactory: NSObject, TransportFactory {
 		#if DISABLE_BLUETOOTH
 		return .off
 		#else
-		if central_state == .poweredOn && peripheral_state == .poweredOn {
+		if centralState == .poweredOn && peripheralState == .poweredOn {
 			return .on
-		} else if central_state == .unauthorized || peripheral_state == .unauthorized {
+		} else if centralState == .unauthorized || peripheralState == .unauthorized {
 			return .disabled
 		} else {
 			return .off
@@ -148,7 +157,7 @@ final class BluetoothFactory: NSObject, TransportFactory {
 
 extension BluetoothFactory: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        central_state = central.state
+        centralState = central.state
         statusSubject.send(compositeStatus())
     }
     
@@ -167,7 +176,7 @@ extension BluetoothFactory: CBCentralManagerDelegate {
 
 extension BluetoothFactory: CBPeripheralManagerDelegate {
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
-        peripheral_state = peripheral.state
+        peripheralState = peripheral.state
 		if peripheral.state == .poweredOn && !haveAddedWhisperService {
 			peripheralManager.add(BluetoothData.whisperService)
 			haveAddedWhisperService = true

@@ -11,6 +11,9 @@ struct ChoiceView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
 	@Environment(\.dynamicTypeSize) private var dynamicTypeSize
+	@EnvironmentObject private var sceneDelegate: SceneDelegate
+	@EnvironmentObject private var orientationInfo: OrientationInfo
+
 	@AppStorage("whisper_tap_preference") private var whisperTapAction: String?
 	@AppStorage("listen_tap_preference") private var listenTapAction: String?
 	@AppStorage("main_view_large_sizes_setting") private var useLargeSizes: Bool = false
@@ -30,204 +33,20 @@ struct ChoiceView: View {
     @FocusState private var nameEdit: Bool
 	@StateObject private var profile = UserProfile.shared
 	@State private var window: Window?
+	@State private var forceBluetooth: Bool = PreferenceData.forceBluetooth
 
-    let nameWidth = CGFloat(350)
-    let nameHeight = CGFloat(105)
-    let choiceButtonWidth = CGFloat(140)
-    let choiceButtonHeight = CGFloat(45)
+	func nameWidth() -> CGFloat { return useBigText() ? 380 : 350 }
+	func nameHeight() -> CGFloat { return useBigText() ? 145 : 125 }
+	func choiceButtonWidth() -> CGFloat {return useBigText() ? 170: 140 }
+	func choiceButtonHeight() -> CGFloat { return useBigText() ? 65 : 45 }
 
     var body: some View {
 		WindowBinder(window: $window) {
-			VStack(spacing: 40) {
-				Form {
-					Section(header: Text("Your Name")) {
-						HStack {
-							TextField("Your Name", text: $newUsername, prompt: Text("Fill in to continue…"))
-								.submitLabel(.done)
-								.focused($nameEdit)
-								.textInputAutocapitalization(.never)
-								.disableAutocorrection(true)
-								.allowsTightening(true)
-							Button("Submit", systemImage: "checkmark.square.fill") { nameEdit = false }
-								.labelStyle(.iconOnly)
-								.disabled(newUsername.isEmpty || newUsername == profile.username)
-						}
-					}
-				}
-				.frame(maxWidth: nameWidth, maxHeight: nameHeight)
-				if (showWhisperButtons) {
-					if transportStatus != .on {
-						switch transportStatus {
-						case .off:
-							Link("Enable Bluetooth or Wireless to whisper or listen...", destination: settingsUrl)
-								.font(FontSizes.fontFor(name: .normal))
-								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-						case .localOnly:
-							Text("Bluetooth ready, Wireless not available")
-								.font(FontSizes.fontFor(name: .normal))
-								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-						case .globalOnly:
-							Text("Bluetooth not available, Wireless available")
-								.font(FontSizes.fontFor(name: .normal))
-								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-						case .disabled:
-							Link("Bluetooth not enabled, Wireless available", destination: settingsUrl)
-								.font(FontSizes.fontFor(name: .normal))
-								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-						case .waiting:
-							Text("Waiting for Bluetooth, Wireless available")
-								.font(FontSizes.fontFor(name: .normal))
-								.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
-						case .on:
-							fatalError("Can't happen: transport status is .on")
-						}
-					}
-					HStack(spacing: 30) {
-						Button(action: {}) {
-							Text("Whisper")
-								.foregroundColor(.white)
-								.fontWeight(.bold)
-								.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-						}
-						.background(profile.username == "" ? Color.gray : Color.accentColor)
-						.cornerRadius(15)
-						.disabled(transportStatus == .off)
-						.simultaneousGesture(
-							LongPressGesture()
-								.onEnded { _ in
-									showWhisperConversations = true
-								}
-						)
-						.highPriorityGesture(
-							TapGesture()
-								.onEnded { _ in
-									let conversations = profile.whisperProfile.conversations()
-									if conversations.count == 1 {
-										maybeWhisper(conversations.first)
-										return
-									}
-									switch whisperTapAction {
-									case "show":
-										showWhisperConversations = true
-									case "default":
-										maybeWhisper(profile.whisperProfile.fallback)
-									case "last":
-										if let c = profile.whisperProfile.lastUsed {
-											maybeWhisper(c)
-										} else {
-											showWhisperConversations = true
-										}
-									default:
-										// not set or set to something illegal
-										showWhisperConversations = true
-									}
-								}
-						)
-						.sheet(isPresented: $showWhisperConversations) {
-							WhisperProfileView(maybeWhisper: maybeWhisper)
-								.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
-						}
-						Button(action: {}) {
-							Text("Listen")
-								.foregroundColor(.white)
-								.fontWeight(.bold)
-								.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-						}
-						.background(Color.accentColor)
-						.cornerRadius(15)
-						.disabled(transportStatus == .off)
-						.simultaneousGesture(
-							LongPressGesture()
-								.onEnded { _ in
-									showListenConversations = true
-								}
-						)
-						.highPriorityGesture(
-							TapGesture()
-								.onEnded { _ in
-									let conversations = profile.listenProfile.conversations()
-									if conversations.count == 1 {
-										maybeListen(conversations.first)
-										return
-									}
-									switch PreferenceData.listenTapAction() {
-									case "show":
-										showListenConversations = true
-									case "last":
-										if let c = profile.listenProfile.conversations().first {
-											maybeListen(c)
-										} else {
-											showListenConversations = true
-										}
-									default:
-										// not set or set to something illegal
-										showListenConversations = true
-									}
-								}
-						)
-						.sheet(isPresented: $showListenConversations) {
-							ListenProfileView(maybeListen: maybeListen)
-								.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
-						}
-					}
-					.transition(.scale)
-				}
-				HStack(spacing: 30) {
-					Button(action: {
-						showFavorites = true
-					}) {
-						Text("Favorites")
-							.foregroundColor(.white)
-							.fontWeight(.bold)
-							.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-					}
-					.background(Color.accentColor)
-					.cornerRadius(15)
-					.sheet(isPresented: $showFavorites) {
-						FavoritesProfileView()
-							.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
-					}
-					Button(action: {
-						UIApplication.shared.open(settingsUrl)
-					}) {
-						Text("Settings")
-							.foregroundColor(.white)
-							.fontWeight(.bold)
-							.frame(width: choiceButtonWidth, height: choiceButtonHeight, alignment: .center)
-					}
-					.background(Color.accentColor)
-					.cornerRadius(15)
-				}
-				VStack (spacing: 25) {
-					Button(action: {
-						UIApplication.shared.open(instructionSite)
-					}) {
-						Text("How To Use")
-							.foregroundColor(.white)
-							.fontWeight(.bold)
-							.frame(width: choiceButtonWidth + 50, height: choiceButtonHeight, alignment: .center)
-					}
-					.background(Color.accentColor)
-					.cornerRadius(15)
-					HStack {
-						Button("About", action: {
-							UIApplication.shared.open(aboutSite)
-						})
-						.frame(width: choiceButtonWidth, alignment: .center)
-						Spacer()
-						Button("Support", action: {
-							UIApplication.shared.open(supportSite)
-						})
-						.frame(width: choiceButtonWidth, alignment: .center)
-					}
-					.frame(width: nameWidth)
-					Button("Profile Sharing", action: { showSharingSheet = true })
-						.disabled(nameEdit)
-						.frame(width: choiceButtonWidth + 50, alignment: .center)
-						.sheet(isPresented: $showSharingSheet, content: {
-							ShareProfileView()
-								.dynamicTypeSize(useLargeSizes ? .accessibility1 : dynamicTypeSize)
-						})
+			VStack(spacing: 0) {
+				if platformInfo != "phone" || orientationInfo.orientation != .landscape {
+					standardView()
+				} else {
+					shortWideView()
 				}
 			}
 			.alert("First Launch", isPresented: $credentialsMissing) {
@@ -252,15 +71,298 @@ struct ChoiceView: View {
 				if scenePhase == .active {
 					logger.info("ChoiceView has become active")
 					profile.update()
+					forceBluetooth = PreferenceData.forceBluetooth
 				}
 			}
-			.onAppear(perform: profile.update)
+			.onAppear{
+				logLifecycle("Choice view appears on scene \(sceneDelegate.id)")
+				profile.update()
+			}
 			.onChange(of: window, initial: true) {
 				window?.windowScene?.title = nil
 			}
 		}
     }
-    
+
+	@ViewBuilder func standardView() -> some View {
+		VStack(spacing: 40) {
+			nameForm()
+			if (showWhisperButtons) {
+				transportStatusView(status: transportStatus, internetOk: !forceBluetooth)
+				HStack(spacing: 30) {
+					whisperButton()
+					listenButton()
+				}
+				.transition(.scale)
+			}
+			HStack(spacing: 30) {
+				favoritesButton()
+				settingsButton()
+			}
+			VStack (spacing: 25) {
+				howToUseButton()
+				HStack {
+					aboutButton()
+					Spacer()
+					supportButton()
+				}
+				.frame(width: nameWidth())
+				profileSharingButton()
+				if platformInfo != "phone" {
+					Spacer()
+						.frame(height: 25)
+					largeSizeToggle()
+				}
+			}
+		}
+	}
+
+	@ViewBuilder func shortWideView() -> some View {
+		VStack(spacing: 15) {
+			nameForm()
+			if (showWhisperButtons) {
+				transportStatusView(status: transportStatus, internetOk: !forceBluetooth)
+				HStack(spacing: 40) {
+					whisperButton()
+					listenButton()
+				}
+				.transition(.scale)
+			}
+			HStack(spacing: 20) {
+				favoritesButton()
+				settingsButton()
+				howToUseButton()
+			}
+			HStack(spacing: 50) {
+				aboutButton()
+				supportButton()
+				profileSharingButton()
+			}
+		}
+	}
+
+	@ViewBuilder func nameForm() -> some View {
+		Form {
+			Section(header: Text("Your Name")) {
+				HStack {
+					TextField("Your Name", text: $newUsername, prompt: Text("Fill in to continue…"))
+						.submitLabel(.done)
+						.focused($nameEdit)
+						.textInputAutocapitalization(.never)
+						.disableAutocorrection(true)
+						.allowsTightening(true)
+					Button("Submit", systemImage: "checkmark.square.fill") { nameEdit = false }
+						.labelStyle(.iconOnly)
+						.disabled(newUsername.isEmpty || newUsername == profile.username)
+				}
+			}
+		}
+		.frame(maxWidth: nameWidth(), maxHeight: nameHeight())
+	}
+
+	@ViewBuilder func transportStatusView(status: TransportStatus, internetOk: Bool) -> some View {
+		switch status {
+		case .off:
+			Link("Enable Internet or Bluetooth...", destination: settingsUrl)
+				.font(FontSizes.fontFor(name: .normal))
+				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+		case .localOnly:
+			Text("Using Bluetooth (Internet unavailable)")
+				.font(FontSizes.fontFor(name: .normal))
+				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+		case .globalOnly:
+			if internetOk {
+				Text("Using Internet (Bluetooth unavailable)")
+					.font(FontSizes.fontFor(name: .normal))
+					.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+			} else {
+				Button("Bluetooth unavailable! (Click for Internet)") {
+					PreferenceData.forceBluetooth = false
+					forceBluetooth = false
+				}
+			}
+		case .on:
+			if internetOk {
+				Button("Using Internet (Click for Bluetooth)") {
+					PreferenceData.forceBluetooth = true
+					forceBluetooth = true
+				}
+				.font(FontSizes.fontFor(name: .normal))
+			} else {
+				Button("Using Bluetooth (Click for Internet)") {
+					PreferenceData.forceBluetooth = false
+					forceBluetooth = false
+				}
+				.font(FontSizes.fontFor(name: .normal))
+			}
+		default:
+			Text("Error obtaining network status. Please restart the app.")
+				.font(FontSizes.fontFor(name: .large))
+				.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
+		}
+	}
+
+	@ViewBuilder func whisperButton() -> some View {
+		Button(action: {}) {
+			Text("Whisper")
+				.foregroundColor(.white)
+				.fontWeight(.bold)
+				.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
+		}
+		.background(profile.username == "" ? Color.gray : Color.accentColor)
+		.cornerRadius(15)
+		.disabled(transportStatus == .off)
+		.simultaneousGesture(
+			LongPressGesture()
+				.onEnded { _ in
+					showWhisperConversations = true
+				}
+		)
+		.highPriorityGesture(
+			TapGesture()
+				.onEnded { _ in
+					let conversations = profile.whisperProfile.conversations()
+					if conversations.count == 1 {
+						maybeWhisper(conversations.first)
+						return
+					}
+					switch whisperTapAction {
+					case "show":
+						showWhisperConversations = true
+					case "default":
+						maybeWhisper(profile.whisperProfile.fallback)
+					case "last":
+						if let c = profile.whisperProfile.lastUsed {
+							maybeWhisper(c)
+						} else {
+							showWhisperConversations = true
+						}
+					default:
+						// not set or set to something illegal
+						showWhisperConversations = true
+					}
+				}
+		)
+		.sheet(isPresented: $showWhisperConversations) {
+			WhisperProfileView(maybeWhisper: maybeWhisper)
+				.dynamicTypeSize(useBigText() ? .accessibility1 : dynamicTypeSize)
+		}
+	}
+
+	@ViewBuilder func listenButton() -> some View {
+		Button(action: {}) {
+			Text("Listen")
+				.foregroundColor(.white)
+				.fontWeight(.bold)
+				.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
+		}
+		.background(Color.accentColor)
+		.cornerRadius(15)
+		.disabled(transportStatus == .off)
+		.simultaneousGesture(
+			LongPressGesture()
+				.onEnded { _ in
+					showListenConversations = true
+				}
+		)
+		.highPriorityGesture(
+			TapGesture()
+				.onEnded { _ in
+					let conversations = profile.listenProfile.conversations()
+					if conversations.count == 1 {
+						maybeListen(conversations.first)
+						return
+					}
+					switch PreferenceData.listenTapAction() {
+					case "show":
+						showListenConversations = true
+					case "last":
+						if let c = profile.listenProfile.conversations().first {
+							maybeListen(c)
+						} else {
+							showListenConversations = true
+						}
+					default:
+						// not set or set to something illegal
+						showListenConversations = true
+					}
+				}
+		)
+		.sheet(isPresented: $showListenConversations) {
+			ListenProfileView(maybeListen: maybeListen)
+				.dynamicTypeSize(useBigText() ? .accessibility1 : dynamicTypeSize)
+		}
+	}
+
+	@ViewBuilder func favoritesButton() -> some View {
+		Button(action: {
+			showFavorites = true
+		}) {
+			Text("Favorites")
+				.foregroundColor(.white)
+				.fontWeight(.bold)
+				.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
+		}
+		.background(Color.accentColor)
+		.cornerRadius(15)
+		.sheet(isPresented: $showFavorites) {
+			FavoritesProfileView()
+				.dynamicTypeSize(useBigText() ? .accessibility1 : dynamicTypeSize)
+		}
+	}
+
+	func settingsButton() -> some View {
+		Button(action: {
+			UIApplication.shared.open(settingsUrl)
+		}) {
+			Text("Settings")
+				.foregroundColor(.white)
+				.fontWeight(.bold)
+				.frame(width: choiceButtonWidth(), height: choiceButtonHeight(), alignment: .center)
+		}
+		.background(Color.accentColor)
+		.cornerRadius(15)
+	}
+
+	@ViewBuilder func howToUseButton() -> some View {
+		Button(action: {
+			UIApplication.shared.open(instructionSite)
+		}) {
+			Text("How To Use")
+				.foregroundColor(.white)
+				.fontWeight(.bold)
+				.frame(width: choiceButtonWidth() + 50, height: choiceButtonHeight(), alignment: .center)
+		}
+		.background(Color.accentColor)
+		.cornerRadius(15)
+	}
+
+	@ViewBuilder func aboutButton() -> some View {
+		Button("About v\(versionString)", action: {
+			UIApplication.shared.open(aboutSite)
+		})
+	}
+
+	@ViewBuilder func supportButton() -> some View {
+		Button("Support", action: {
+			UIApplication.shared.open(supportSite)
+		})
+	}
+
+	@ViewBuilder func profileSharingButton() -> some View {
+		Button("Profile Sharing", action: { showSharingSheet = true })
+			.disabled(nameEdit)
+			.sheet(isPresented: $showSharingSheet, content: {
+				ShareProfileView()
+					.dynamicTypeSize(useBigText() ? .accessibility1 : dynamicTypeSize)
+			})
+	}
+
+	@ViewBuilder func largeSizeToggle() -> some View {
+		Toggle("Larger Type", isOn: $useLargeSizes)
+			.frame(maxWidth: useLargeSizes ? 260 : 205)
+	}
+
     func updateFromProfile() {
         newUsername = profile.username
         if profile.username.isEmpty {
@@ -308,6 +410,10 @@ struct ChoiceView: View {
 			}
 		}
     }
+
+	func useBigText() -> Bool {
+		useLargeSizes && platformInfo != "phone"
+	}
 }
 
 #Preview {

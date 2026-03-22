@@ -22,20 +22,21 @@ struct WhisperProfileView: View {
 		NavigationStack(path: $path) {
 			List {
 				ForEach(rows) { r in
-					NavigationLink(value: r.conversation) {
-						HStack(spacing: 20) {
-							Button("Whisper", systemImage: "mouth") {
-								logger.info("Hit whisper button on \(r.conversation.id) (\(r.id))")
-								maybeWhisper?(r.conversation)
-							}
-							.labelStyle(.iconOnly)
-							.buttonStyle(.bordered)
-							.font(.title)
-							Text(r.id)
-								.lineLimit(nil)
-								.bold(r.conversation == defaultConversation)
+					HStack(spacing: 0) {
+						Button(r.id) {
+							logger.info("Hit whisper button on \(r.conversation.id) (\(r.id))")
+							maybeWhisper?(r.conversation)
 						}
+							.lineLimit(nil)
+							.bold(r.conversation == defaultConversation)
+						Spacer(minLength: 20)
+						Button("Edit", systemImage: "square.and.pencil") {
+							path.append(r.conversation)
+						}
+							.labelStyle(.iconOnly)
+							.font(.title)
 					}
+					.buttonStyle(.borderless)
 				}
 				.onDelete { indexSet in
 					let conversations = rows.map{r in return r.conversation}

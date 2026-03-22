@@ -31,6 +31,7 @@
 		37541D5A2C71150F00922C01 /* FavoritesUseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37541D592C71150F00922C01 /* FavoritesUseView.swift */; };
 		37541D5C2C71172C00922C01 /* WhisperControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37541D5B2C71172C00922C01 /* WhisperControlView.swift */; };
 		376388CD29DDFB77006E5686 /* ListenStatusTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376388CC29DDFB77006E5686 /* ListenStatusTextView.swift */; };
+		376C07482EFF41F900095437 /* OrientationInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 376C07472EFF41F900095437 /* OrientationInfo.swift */; };
 		3771F83529DD2F900011419E /* FontSizes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3771F83429DD2F900011419E /* FontSizes.swift */; };
 		377237252BB8F5BE0062A833 /* LinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377237242BB8F5BE0062A833 /* LinkView.swift */; };
 		3775A13A29AD4EB6007159F5 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 3775A13929AD4EB6007159F5 /* Settings.bundle */; };
@@ -108,6 +109,7 @@
 		37541D5B2C71172C00922C01 /* WhisperControlView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WhisperControlView.swift; sourceTree = "<group>"; };
 		37594DCA29C224660043C152 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		376388CC29DDFB77006E5686 /* ListenStatusTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenStatusTextView.swift; sourceTree = "<group>"; };
+		376C07472EFF41F900095437 /* OrientationInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationInfo.swift; sourceTree = "<group>"; };
 		3771F83429DD2F900011419E /* FontSizes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FontSizes.swift; sourceTree = "<group>"; };
 		377237242BB8F5BE0062A833 /* LinkView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LinkView.swift; sourceTree = "<group>"; };
 		3775A13929AD4EB6007159F5 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
@@ -300,6 +302,7 @@
 		37763D1329AC034B0051CFE5 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				376C07472EFF41F900095437 /* OrientationInfo.swift */,
 				3771F83429DD2F900011419E /* FontSizes.swift */,
 				377D71142A913E2E009B416F /* PreferenceData.swift */,
 				37C5142329CA2B44001A121B /* PastTextModel.swift */,
@@ -461,7 +464,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1420;
-				LastUpgradeCheck = 1510;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					37763CE029AAC1E50051CFE5 = {
 						CreatedOnToolsVersion = 14.2;
@@ -562,6 +565,7 @@
 				37D6B35929BC5DD300F952FE /* WhisperView.swift in Sources */,
 				37159AA82C6A9488005CB922 /* HasherFNV1a.swift in Sources */,
 				37472EBB2BF43381005713E1 /* WhisperTranscriptView.swift in Sources */,
+				376C07482EFF41F900095437 /* OrientationInfo.swift in Sources */,
 				373748792AD66D150053858B /* TcpMonitor.swift in Sources */,
 				37D78A182B2FE017002494CD /* WhisperProfileDetailView.swift in Sources */,
 				37CBBD0C2AF8CAC7006AE49F /* UserProfile.swift in Sources */,
@@ -618,6 +622,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = P7YF26GARW;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -641,6 +646,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -681,6 +687,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = P7YF26GARW;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -697,6 +704,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
@@ -711,10 +719,12 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20700003;
+				CURRENT_PROJECT_VERSION = 20800008;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
-				DEVELOPMENT_TEAM = P7YF26GARW;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = whisper/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Whisper;
@@ -731,7 +741,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.7;
+				MARKETING_VERSION = 2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = io.clickonetwo.whisper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -754,10 +764,12 @@
 				CODE_SIGN_ENTITLEMENTS = whisper/whisper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20700003;
+				CURRENT_PROJECT_VERSION = 20800008;
 				DEVELOPMENT_ASSET_PATHS = "\"whisper/Preview Content\"";
-				DEVELOPMENT_TEAM = P7YF26GARW;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = whisper/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Whisper;
@@ -774,7 +786,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.7;
+				MARKETING_VERSION = 2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = io.clickonetwo.whisper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

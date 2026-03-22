@@ -9,6 +9,8 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<true/>
 	</dict>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>This app uses Bluetooth to Whisper and Listen whenever Internet is not available</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>

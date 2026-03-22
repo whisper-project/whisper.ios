@@ -149,7 +149,7 @@ final class TcpListenTransport: SubscribeTransport {
 		channel.once(ARTChannelEvent.attached) { _ in
 			self.contentChannelAttached = true
 			for (remote, chunk) in self.pendingReplays {
-				logAnomaly("Replaying replay chunk after content attach: \(chunk)", kind: .global)
+				logger.debug("Replaying replay chunk after content attach")
 				self.sendReplayRequest(remote: remote, chunk: chunk)
 			}
 		}

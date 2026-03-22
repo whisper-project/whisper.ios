@@ -10,6 +10,7 @@ struct WhisperView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
     @Environment(\.scenePhase) var scenePhase
+	@EnvironmentObject var sceneDelegate: SceneDelegate
 
     @Binding var mode: OperatingMode
     var conversation: WhisperConversation
@@ -32,8 +33,8 @@ struct WhisperView: View {
 	@State private var showFavorites: Bool = PreferenceData.showFavorites
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
+	@State private var inactive: Bool = false
 	@State private var window: Window?
-	@StateObject private var appStatus = AppStatus.shared
 	@State private var viewHasRespondedToQuit = false
 
     init(mode: Binding<OperatingMode>, conversation: WhisperConversation) {
@@ -84,36 +85,37 @@ struct WhisperView: View {
 			.onChange(of: interjecting) {
 				if interjecting {
 					pendingLiveText = liveText
-					liveText = interjectionPrefixOverride ?? PreferenceData.interjectionPrefix()
+					let interjectionStart = interjectionPrefixOverride ?? PreferenceData.interjectionPrefix()
+					liveText = model.updateLiveText(old: liveText, new: interjectionStart)
 					interjectionPrefixOverride = nil
 					model.playInterjectionSound()
 				} else {
 					if !liveText.isEmpty && liveText != PreferenceData.interjectionPrefix() {
 						liveText = model.submitLiveText()
 					}
-					liveText = pendingLiveText
+					liveText = model.updateLiveText(old: liveText, new: pendingLiveText)
 				}
 			}
 			.onChange(of: interjectionPrefix) { UserProfile.shared.settingsProfile.update() }
 			.onChange(of: interjectionAlert) { UserProfile.shared.settingsProfile.update() }
 			.onAppear {
-				logger.log("WhisperView appeared")
-				model.start()
+				logLifecycle("WhisperView appeared in scene \(sceneDelegate.id)")
+				PreferenceData.setSceneState(sceneDelegate.id, mode: "whisper", conversationId: conversation.id)
+				sceneDelegate.sceneModel = model
+				liveText = model.start()
 				focusField = "liveText"
 				SleepControl.shared.disable(reason: "In Whisper Session")
 			}
 			.onDisappear {
 				SleepControl.shared.enable()
-				logger.log("WhisperView disappeared")
-				model.stop()
+				logLifecycle("WhisperView disappeared in scene \(sceneDelegate.id)")
+				PreferenceData.clearSceneState(sceneDelegate.id)
+				model.stop(endSession: true)
+				sceneDelegate.sceneModel = nil
 			}
-			.onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification), perform: { _ in
-				logger.log("Received notification that app will terminate")
-				quitWhisperView()
-			})
-			.onChange(of: appStatus.appIsQuitting) {
-				if appStatus.appIsQuitting {
-					logger.log("App has been told to quit")
+			.onChange(of: sceneDelegate.disconnected) {
+				if sceneDelegate.disconnected {
+					logLifecycle("WhisperView in scene \(sceneDelegate.id) quitting due to detach")
 					quitWhisperView()
 				}
 			}
@@ -126,20 +128,25 @@ struct WhisperView: View {
 			.onChange(of: scenePhase) {
 				switch scenePhase {
 				case .background:
-					logger.log("Went to background")
+					logger.log("Whisper view went to background")
 					focusField = nil
 					inBackground = true
+					cancelOverlays()
 					model.wentToBackground()
 				case .inactive:
-					logger.log("Went inactive")
+					logger.log("Whisper view went inactive")
+					inactive = true
+					cancelOverlays()
+					model.wentInactive()
 				case .active:
-					logger.log("Went to foreground")
+					logger.log("Whisper view went to foreground")
 					focusField = "liveText"
 					inBackground = false
+					inactive = false
 					model.wentToForeground()
 				@unknown default:
 					inBackground = false
-					logger.error("Went to unknown phase: \(String(describing: scenePhase), privacy: .public)")
+					logAnomaly("Whisper view went to unknown phase: \(String(describing: scenePhase))")
 				}
 			}
 		}
@@ -175,6 +182,13 @@ struct WhisperView: View {
 
 	private func doEditFavorites() {
 		editFavorites = true
+	}
+
+	private func cancelOverlays() {
+		model.showStatusDetail = false
+		model.connectionError = false
+		editFavorites = false
+		confirmStop = false
 	}
 
 	@ViewBuilder private func foregroundView(_ geometry: GeometryProxy) -> some View {
@@ -248,9 +262,12 @@ struct WhisperView: View {
 		TextEditor(text: $liveText)
 			.font(FontSizes.fontFor(size))
 			.truncationMode(.head)
-			.onChange(of: liveText) { old, new in
-				if interjecting && new == old + "\n" {
-					liveText = old
+			.onChange(of: liveText, initial: false) { old, new in
+				if interjecting && new.contains("\n") {
+					liveText = new
+					if new.hasSuffix("\n") {
+						liveText.removeLast()
+					}
 					DispatchQueue.main.async { interjecting = false }
 				} else {
 					liveText = model.updateLiveText(old: old, new: new)
@@ -295,17 +312,17 @@ struct WhisperView: View {
 	}
 
 	private func clearTyping() {
-		liveText = ""
+		liveText = model.updateLiveText(old: liveText, new: "")
 	}
 
 	private func quitWhisperView() {
 		guard !viewHasRespondedToQuit else {
-			logger.log("Whisper view is already terminating")
 			return
 		}
 		logger.warning("Whisper view is terminating in response to quit signal")
 		viewHasRespondedToQuit = true
 		model.stop()
+		sceneDelegate.sceneModel = nil
 	}
 
 	private func isOnPhone() -> Bool {

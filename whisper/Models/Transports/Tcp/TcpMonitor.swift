@@ -10,7 +10,7 @@ import Network
 import Combine
 
 final class TcpMonitor {
-    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
+    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.on)
 
     private var monitor: NWPathMonitor
     
@@ -24,7 +24,7 @@ final class TcpMonitor {
             case .unsatisfied, .requiresConnection:
                 self?.statusSubject.send(.off)
             @unknown default:
-                self?.statusSubject.send(.off)
+                self?.statusSubject.send(.on)
             }
         }
         

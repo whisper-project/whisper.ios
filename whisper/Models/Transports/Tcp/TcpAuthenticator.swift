@@ -17,7 +17,7 @@ final class TcpAuthenticator {
     private var conversationId: String
 	private var conversationName: String
     private var clientId = PreferenceData.clientId
-	private var contentId: String = PreferenceData.contentId
+	private var contentId: String
     private var client: ARTRealtime?
     private var failureCallback: TransportErrorCallback
 	private var transcriptId: String = "no-transcript"
@@ -25,6 +25,7 @@ final class TcpAuthenticator {
 	init(mode: OperatingMode, conversationId: String, conversationName: String, callback: @escaping TransportErrorCallback) {
         self.mode = mode
         self.conversationId = conversationId
+		self.contentId = PreferenceData.getContentId(conversationId)
 		self.conversationName = conversationName.isEmpty ? "ListenOffer" : conversationName
         self.failureCallback = callback
     }
@@ -32,6 +33,7 @@ final class TcpAuthenticator {
 	init(conversationId: String) {
 		self.mode = .whisper
 		self.conversationId = conversationId
+		self.contentId = PreferenceData.getContentId(conversationId)
 		self.conversationName = ""
 		self.failureCallback = {s, m in }
 	}

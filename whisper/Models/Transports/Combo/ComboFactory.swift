@@ -12,32 +12,38 @@ final class ComboFactory: TransportFactory {
     
     static let shared = ComboFactory()
     
-    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.off)
+    var statusSubject: CurrentValueSubject<TransportStatus, Never> = .init(.globalOnly)
 
     func publisher(_ conversation: WhisperConversation) -> Publisher {
-        return Publisher(conversation)
+		return Publisher(status: comboStatus, conversation: conversation)
     }
     
     func subscriber(_ conversation: ListenConversation) -> Subscriber {
-        return Subscriber(conversation)
+		return Subscriber(status: comboStatus, conversation: conversation)
     }
     
     //MARK: private types and properties and initialization
+	private var comboStatus: TransportStatus = .globalOnly
+
     private var localFactory = BluetoothFactory.shared
     private var globalFactory = TcpFactory.shared
     
-    private var localStatus: TransportStatus = .off
-    private var globalStatus: TransportStatus = .off
+    private var localStatus: TransportStatus
+    private var globalStatus: TransportStatus
 
     private var cancellables: Set<AnyCancellable> = []
 
     init() {
+		localStatus = localFactory.statusSubject.value
+		globalStatus = globalFactory.statusSubject.value
+		comboStatus = compositeStatus()
         localFactory.statusSubject
             .sink(receiveValue: setLocalStatus)
             .store(in: &cancellables)
         globalFactory.statusSubject
             .sink(receiveValue: setGlobalStatus)
             .store(in: &cancellables)
+		statusSubject.send(comboStatus)
     }
     
     deinit {
@@ -47,38 +53,29 @@ final class ComboFactory: TransportFactory {
     //MARK: private methods
     func setLocalStatus(_ new: TransportStatus) {
         localStatus = new
-        statusSubject.send(compositeStatus())
+		comboStatus = compositeStatus()
+        statusSubject.send(comboStatus)
     }
     
     func setGlobalStatus(_ new: TransportStatus) {
         globalStatus = new
-        statusSubject.send(compositeStatus())
+		comboStatus = compositeStatus()
+        statusSubject.send(comboStatus)
     }
     
     private func compositeStatus() -> TransportStatus {
         switch localStatus {
 		case .off:
-			return globalStatus == .on ? .globalOnly : .off
+			return globalStatus == .off ? .off : .globalOnly
 		case .waiting:
-            if case .on = globalStatus {
-                #if targetEnvironment(simulator)
-                // the simulator always has Bluetooth off,
-                // so can't take accurate screenshots
-                // unless we ignore this status
-                return .on
-                #else
-                return .waiting
-                #endif
-            } else {
-                return .off
-            }
+			return globalStatus == .off ? .off : .globalOnly
         case .disabled:
-			return globalStatus == .on ? .disabled : .off
+			return globalStatus == .off ? .off : .globalOnly
         case .on:
-			return globalStatus == .on ? .on : .localOnly
+			return globalStatus == .off ? .localOnly : .on
 		default:
 			logAnomaly("Can't happen: localStatus was \(localStatus), assuming .off")
-			return globalStatus == .on ? .globalOnly : .off
+			return globalStatus == .off ? .off : .globalOnly
         }
     }
 }

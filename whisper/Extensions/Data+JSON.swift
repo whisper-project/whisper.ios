@@ -60,7 +60,7 @@ extension Data {
 		}
 	}
 
-	static func executeJSONRequest(_ request: URLRequest, handler: ((Int, Data) -> Void)? = nil) {
+	@discardableResult static func executeJSONRequest(_ request: URLRequest, handler: ((Int, Data) -> Void)? = nil) -> URLSessionDataTask {
 		let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
 			guard error == nil else {
 				logger.error("Failed to execute \(request, privacy: .public): \(String(describing: error), privacy: .public)")
@@ -97,5 +97,6 @@ extension Data {
 		}
 		// logger.info("Executing \(request.httpMethod!) \(request.url!)")
 		task.resume()
+		return task
 	}
 }

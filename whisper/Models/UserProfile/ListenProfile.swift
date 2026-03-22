@@ -68,6 +68,10 @@ final class ListenProfile: Codable {
 		return sorted
 	}
 
+	func getConversation(_ id: String) -> ListenConversation? {
+		return table[id]
+	}
+
 	func fromMyWhisperConversation(_ conversation: WhisperConversation) -> ListenConversation {
 		let c = ListenConversation(uuid: conversation.id)
 		c.name = conversation.name

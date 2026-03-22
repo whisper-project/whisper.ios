@@ -117,10 +117,11 @@ struct PreferenceData {
 			// still using the same server, nothing to do
 			return
 		}
-		logger.warning("Server change noticed: resetting client secrets")
+		logger.warning("Server change noticed: resetting client secrets and conversation key")
 		defaults.set(whisperServer, forKey: "whisper_last_used_server")
 		defaults.removeObject(forKey: "whisper_last_client_secret")
 		defaults.removeObject(forKey: "whisper_client_secret")
+		defaults.removeObject(forKey: "content_channel_id")
 	}
     static func makeSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
@@ -134,20 +135,116 @@ struct PreferenceData {
 		}
     }
 
-	// content channel ID
-	static var contentId: String {
-		get {
-			if let value = defaults.string(forKey: "content_channel_id") {
-				return value
-			} else {
-				let new = UUID().uuidString
-				defaults.setValue(new, forKey: "content_channel_id")
-				return new
-			}
+	// scene state - one for each scene session, remembered so we can resume when reattached
+	static private var sceneStates: [String: [String]] = {
+		let saved = defaults.dictionary(forKey: "scene_state_map") as? [String: [String]]
+		guard let saved = saved else {
+			logger.debug("No saved sceneStates at startup")
+			return [:]
 		}
-		set(new) {
-			defaults.setValue(new, forKey: "content_channel_id")
+		logger.debug("\(saved.count) saved sceneStates at startup")
+		return saved
+	}()
+	static private func saveSceneStates() {
+		if sceneStates.isEmpty {
+			logger.debug("There are no saved sceneStates")
+			defaults.removeObject(forKey: "scene_state_map")
+		} else {
+			logger.debug("There are \(sceneStates.count) saved sceneStates")
+			defaults.set(sceneStates, forKey: "scene_state_map")
 		}
+	}
+	static func setSceneState(_ sceneId: String, mode: String, conversationId: String) {
+		logger.debug("Setting scene state for scene \(sceneId) to (\(mode), \(conversationId))")
+		sceneStates[sceneId] = [mode, conversationId]
+		saveSceneStates()
+	}
+	static func clearSceneState(_ sceneId: String) {
+		logger.debug("Clearing scene state for scene \(sceneId)")
+		sceneStates.removeValue(forKey: sceneId)
+		saveSceneStates()
+	}
+	static func getSceneState(_ sceneId: String) -> (mode: String, conversationId: String)? {
+		guard let state = sceneStates[sceneId] else {
+			logger.debug("No saved scene state for scene \(sceneId)")
+			return nil
+		}
+		logger.debug("Saved scene state for scene \(sceneId) is (\(state[0]), \(state[1]))")
+		return (mode: state[0], conversationId: state[1])
+	}
+
+	// content channel ID - one for each conversation, remembered so we can restart and rejoin
+	static private var contentIds: [String: String] = {
+		let saved = defaults.dictionary(forKey: "convo_content_id_map") as? [String: String]
+		if saved == nil {
+			logger.debug("No saved contentIds at startup")
+			return [:]
+		}
+		logger.debug("\(saved!.count) saved contentIds at startup")
+		return saved!
+	}()
+	static private func saveContentIds() {
+		if contentIds.isEmpty {
+			logger.debug("There are no saved contentIds")
+			defaults.removeObject(forKey: "convo_content_id_map")
+		} else {
+			logger.debug("There are \(contentIds.count) saved contentIds")
+			defaults.set(contentIds, forKey: "convo_content_id_map")
+		}
+	}
+	static func clearContentId(_ conversationId: String) {
+		logger.debug("Clearing content id for conversation \(conversationId)")
+		contentIds.removeValue(forKey: conversationId)
+		saveContentIds()
+	}
+	static func getContentId(_ conversationId: String) -> String {
+		var id = contentIds[conversationId] ?? ""
+		if id.isEmpty {
+			logger.debug("Creating new content id for conversation \(conversationId)")
+			id = UUID().uuidString
+			contentIds[conversationId] = id
+			saveContentIds()
+		}
+		logger.debug("Returning content id \(id) for conversation \(conversationId)")
+		return id
+	}
+
+	// past text and live text: remembered so we can restart
+	static private var textHistory: [String: [String]] = {
+		guard let saved = defaults.dictionary(forKey: "text_history") as? [String: [String]] else {
+			logger.debug("No saved textHistory entries at startup")
+			return [:]
+		}
+		logger.debug("\(saved.count) saved textHistory entries at startup")
+		return saved
+	}()
+	static private func saveTextHistory() {
+		if textHistory.isEmpty {
+			logger.debug("There are no saved textHistory entries")
+			defaults.removeObject(forKey: "text_history")
+		} else {
+			logger.debug("There are \(textHistory.count) saved textHistory entries")
+			defaults.set(textHistory, forKey: "text_history")
+		}
+	}
+	static func setTextHistory(_ conversationId: String, past: String, live: String) {
+		let summary = "past: \(past.count), live: \(live.count), ts: \(Date())"
+		textHistory[conversationId] = [past, live, summary]
+		logLifecycle("Text history summary saved for conversation \(conversationId): \(summary)")
+		saveTextHistory()
+	}
+	static func clearTextHistory(_ conversationId: String) {
+		textHistory.removeValue(forKey: conversationId)
+		saveTextHistory()
+	}
+	static func getTextHistory(_ conversationId: String) -> (past: String, live: String)? {
+		guard let entry = textHistory[conversationId] else {
+			logger.debug("No textHistory for conversation \(conversationId)")
+			return nil
+		}
+		let summary = entry.count > 2 ? entry[2] : "<no summary>"
+		logLifecycle("Text history summary retrieved for conversation \(conversationId): \(summary)")
+		return (past: entry[0], live: entry[1])
 	}
 
 	// size of text
@@ -297,6 +394,16 @@ struct PreferenceData {
 		}
 		set(new) {
 			defaults.set(new.name, forKey: "current_favorite_tag_setting")
+		}
+	}
+
+	/// Connection settings
+	static var forceBluetooth: Bool {
+		get {
+			return defaults.bool(forKey: "force_bluetooth_setting")
+		}
+		set(val) {
+			defaults.setValue(val, forKey: "force_bluetooth_setting")
 		}
 	}
 

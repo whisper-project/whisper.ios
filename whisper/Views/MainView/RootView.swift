@@ -8,6 +8,7 @@ import SwiftUI
 struct RootView: View {
 	@Environment(\.openWindow) private var openWindow
 	@Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
+	@EnvironmentObject private var sceneDelegate: SceneDelegate
 
 	@State var mode: OperatingMode = .ask
 	@State var conversation: (any Conversation)? = nil
@@ -21,6 +22,34 @@ struct RootView: View {
 			.alert("Cannot Listen", isPresented: $showWarning,
 				   actions: { Button("OK", action: { })}, message: { Text(warningMessage) })
 			.onAppear {
+				if let state = PreferenceData.getSceneState(sceneDelegate.id) {
+					if state.mode == "whisper" {
+						if let c = profile.whisperProfile.getConversation(state.conversationId) {
+							mode = .whisper
+							conversation = c
+							logLifecycle("Resuming whisper conversation \(c.id) in scene \(sceneDelegate.id)")
+						} else {
+							logAnomaly("Found a 'whisper' state for a non-existent conversation \(state.conversationId)")
+						}
+					} else if state.mode == "listen" {
+						if let c = profile.listenProfile.getConversation(state.conversationId) {
+							mode = .listen
+							conversation = c
+							logLifecycle("Resuming listen conversation \(c.id) in scene \(sceneDelegate.id)")
+						} else if let wc = profile.whisperProfile.getConversation(state.conversationId) {
+							let c = profile.listenProfile.fromMyWhisperConversation(wc)
+							mode = .listen
+							conversation = c
+							logLifecycle("Resuming owned listen conversation \(c.id) in scene \(sceneDelegate.id)")
+						} else {
+							logAnomaly("Found a 'listen' state for a non-existent conversation \(state.conversationId)")
+						}
+					} else {
+						logAnomaly("Found an illegal mode in the scene state: \(state.mode)")
+					}
+				} else {
+					logLifecycle("No conversation to resume in scene \(sceneDelegate.id)")
+				}
 				profile.update()
 			}
 			.onOpenURL { urlObj in
@@ -37,11 +66,11 @@ struct RootView: View {
 					return
 				}
 				if mode == .ask {
-					logger.info("Opening conversation in existing root view: \(convo.id, privacy: .public) (\(convo.name, privacy: .public))")
+					logLifecycle("Opening conversation in existing scene: \(convo.id) (\(convo.name))")
 					conversation = convo
 					mode = .listen
 				} else if (supportsMultipleWindows) {
-					logger.info("Opening conversation in new link view: \(convo.id, privacy: .public) (\(convo.name, privacy: .public))")
+					logger.info("Opening conversation in new scene: \(convo.id, privacy: .public) (\(convo.name, privacy: .public))")
 					openWindow(value: convo)
 				} else {
 					logger.warning("Rejecting conversation because only available window is busy: \(convo.id, privacy: .public) (\(convo.name, privacy: .public))")

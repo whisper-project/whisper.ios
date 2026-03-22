@@ -82,38 +82,39 @@ struct ListenProfileView: View {
 	}
 
 	@ViewBuilder func listenConversations() -> some View {
-		List(conversations) { c in
-			HStack(spacing: 20) {
-				Button("Listen", systemImage: "ear") {
+		List($conversations, id: \.id) { $c in
+			HStack(spacing: 15) {
+				Button {
 					logger.info("Hit listen button on \(c.id) (\(c.name))")
 					maybeListen?(c)
+				} label: {
+					Text("\(c.name) with \(c.ownerName)")
+						.lineLimit(nil)
 				}
-				.font(.title)
-				Text("\(c.name) with \(c.ownerName)").lineLimit(nil)
 				Spacer()
 				ShareLink("", item: PreferenceData.publisherUrl(c))
-					.font(.title)
 				Button("Delete", systemImage: "delete.left") {
 					logger.info("Hit delete button on \(c.id) (\(c.name))")
 					profile.listenProfile.delete(c.id)
 					updateFromProfile()
 				}
 				.font(.title)
+				.labelStyle(.iconOnly)
 			}
-			.labelStyle(.iconOnly)
 			.buttonStyle(.borderless)
 		}
 	}
 
 	@ViewBuilder func whisperConversations() -> some View {
-		List(myConversations) { c in
-			HStack(spacing: 20) {
-				Button("Listen", systemImage: "ear") {
-					logger.info("Hit listen button on \(c.id) (\(c.name))")
+		List($myConversations, id: \.id) { $c in
+			HStack(spacing: 15) {
+				Button {
+					logger.info("Hit listen button on \(c.id) (\(c.name, privacy: .public))")
 					maybeListen?(profile.listenProfile.fromMyWhisperConversation(c))
+				} label: {
+					Text("\(c.name)")
+						.lineLimit(nil)
 				}
-				.font(.title)
-				Text("\(c.name)").lineLimit(nil)
 				Spacer()
 				ShareLink("", item: PreferenceData.publisherUrl(c))
 			}

@@ -18,7 +18,7 @@ let platformInfo = UIDevice.current.userInterfaceIdiom == .phone ? "phone" : "pa
 let versionInfo = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "??"
 let buildInfo = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "??"
 #if DEBUG
-let versionString = buildInfo
+let versionString = "\(versionInfo).\(Int(buildInfo.suffix(4))!)β"
 #else
 let versionString = "\(versionInfo).\(Int(buildInfo.suffix(4))!)"
 #endif
@@ -80,15 +80,19 @@ let logger = Logger()
 @main
 struct whisperApp: App {
 	@UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
+
+	@StateObject private var orientationInfo: OrientationInfo = .init()
+
     var body: some Scene {
         WindowGroup {
 			RootView()
+				.environmentObject(orientationInfo)
         }
 		.handlesExternalEvents(matching: [PreferenceData.publisherUrlEventMatchString])
 
 		WindowGroup(for: ListenConversation.self) { $conversation in
 			LinkView(conversation: conversation)
+				.environmentObject(orientationInfo)
 		}
     }
 }
@@ -102,7 +106,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         } catch (let err) {
 			logger.error("Failed to set audio session category: \(err, privacy: .public)")
         }
-        logger.info("Registering for remote notifications")
+        logLifecycle("Registering for remote notifications")
         application.registerForRemoteNotifications()
         return true
     }
@@ -140,7 +144,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 			if response.statusCode == 201 || response.statusCode == 204 {
                 logger.info("Successful post of APNs token")
 				if response.statusCode == 201 {
-					logger.info("Server reponse forces reset of client secret and turns on packet logging")
+					logLifecycle("Server reponse forces reset of client secret and turns on packet logging")
 					// Our secret has gone out of sync with server, it will create a new one
 					// and post it to us.  Until that happens, we need to use our last
 					// secret because the server doesn't know the current secret.
@@ -215,33 +219,77 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
 	func applicationWillTerminate(_ application: UIApplication) {
-		let shared = AppStatus.shared
-		shared.appIsQuitting = true
+		let task = logLifecycle("App is terminating")
+		// wait for the network task
+		for _ in 0..<100 where task.state != .completed {
+			Thread.sleep(forTimeInterval: 0.01)
+		}
+	}
+
+	func application(_ application: UIApplication, configurationForConnecting: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+		let config = UISceneConfiguration(name: nil, sessionRole: .windowApplication)
+		config.delegateClass = SceneDelegate.self
+		return config
+	}
+
+	func application(_ application: UIApplication, didDiscardSceneSessions: Set<UISceneSession>) {
+		for session in didDiscardSceneSessions {
+			if let delegate = session.scene?.delegate as? SceneDelegate {
+				logLifecycle("Discarded scene \(delegate.id)")
+				PreferenceData.clearSceneState(delegate.id)
+			}
+		}
+	}
+}
+
+class SceneDelegate: UIResponder, ObservableObject, UIWindowSceneDelegate {
+	@Published var id: String = ""
+	@Published var disconnected: Bool = false
+	var sceneModel: WhisperViewModel?
+
+	func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options _ignore: UIScene.ConnectionOptions) {
+		id = session.persistentIdentifier
+		logLifecycle("Connected scene \(id)")
+	}
+
+	func sceneDidDisconnect(_ scene: UIScene) {
+		logLifecycle("Disconnected scene \(id)")
+		disconnected = true
+	}
+
+	func sceneDidBecomeActive(_ scene: UIScene) {
+		logger.debug("Activated scene \(self.id, privacy: .public)")
+	}
+
+	func sceneWillResignActive(_ scene: UIScene) {
+		logLifecycle("Scene \(self.id) will become inactive")
+		self.sceneModel?.saveSession()
+	}
+
+	func sceneDidBecomeInactive(_ scene: UIScene) {
+		logger.debug("Deactivated scene \(self.id, privacy: .public)")
+	}
+
+	func sceneDidEnterBackground(_ scene: UIScene) {
+		logger.debug("Backgrounded scene \(self.id, privacy: .public)")
 	}
 }
 
 // following code from https://stackoverflow.com/a/66394826/558006
-func restartApplication(){
-	let localUserInfo: [AnyHashable : Any] = ["pushType": "restart"]
+func restartApplication() {
+	logLifecycle("User is requesting restart of the app")
 
 	let content = UNMutableNotificationContent()
 	content.title = "Whisper app is ready to launch"
 	content.body = "Tap to open the application"
 	content.sound = UNNotificationSound.default
+	let localUserInfo: [AnyHashable : Any] = ["pushType": "restart"]
 	content.userInfo = localUserInfo
 	let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.5, repeats: false)
-
 	let identifier = "org.whisper-project.client.swift.restart"
 	let request = UNNotificationRequest.init(identifier: identifier, content: content, trigger: trigger)
-
 	let center = UNUserNotificationCenter.current()
 	center.add(request)
-	
+
 	exit(0)
-}
-
-final class AppStatus: ObservableObject {
-	static var shared: AppStatus = .init()
-
-	@Published var appIsQuitting: Bool = false
 }

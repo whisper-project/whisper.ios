@@ -53,7 +53,16 @@ final class PastTextModel: ObservableObject {
         }
 		return (raw: rawLines.map{ String($0) }, linked: lines.map{ String($0) })
     }
-    
+
+	func getText() -> String {
+		rawPastText
+	}
+
+	func setFromText(_ text: String) {
+		clearLines()
+		addText(text)
+	}
+
     func addText(_ text: String) {
 		if text.isEmpty {
 			return
@@ -63,11 +72,6 @@ final class PastTextModel: ObservableObject {
         }
     }
     
-    func setFromText(_ text: String) {
-        clearLines()
-        addText(text)
-    }
-
 	func addLinks(_ text: String) -> String {
 		if text.isEmpty {
 			return text

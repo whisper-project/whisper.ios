@@ -22,7 +22,7 @@ struct ListenersView: View {
 					.font(.headline)
 				HStack (spacing: 100) {
 					if let url = shareLinkUrl {
-						ShareLink("Send Listen Link", item: url)
+						ShareLink("Listen Link", item: url)
 					}
 					if model.transcriptId != nil {
 						Button(action: { model.shareTranscript() }, label: {
@@ -60,8 +60,10 @@ struct ListenersView: View {
 								Image(systemName: candidate.remote.kind == .global ? "network" : "personalhotspot")
 									.foregroundColor(colorScheme == .light ? lightPastTextColor : darkPastTextColor)
 								Spacer(minLength: 40)
-								Button(action: { model.shareTranscript(candidate) }, label: { Image(systemName: "eyeglasses") })
-									.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
+								if model.transcriptId != nil {
+									Button(action: { model.shareTranscript(candidate) }, label: { Image(systemName: "eyeglasses") })
+										.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
+								}
 								Button(action: { model.playSound(candidate) }, label: { Image(systemName: "speaker.wave.2") })
 									.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 20))
 								Button(action: { dropListener(candidate) }, label: { Image(systemName: "delete.left") })
@@ -73,6 +75,7 @@ struct ListenersView: View {
 			}
 			.font(FontSizes.fontFor(FontSizes.minTextSize + 1))
 		}
+		.frame(minHeight: calcMinHeight())
 		.padding()
     }
     
@@ -90,8 +93,16 @@ struct ListenersView: View {
 	func dropListener(_ candidate: WhisperViewModel.Candidate) {
 		model.dropListener(candidate)
 	}
-}
 
-#Preview {
-	ListenersView(model: WhisperViewModel(UserProfile.shared.whisperProfile.fallback))
+	private func calcMinHeight() -> CGFloat {
+		if platformInfo == "phone" {
+			// doesn't matter on phone, because it's in a sheet
+			return 200
+		}
+		let topCount = model.invites.count
+		let botCount = model.listeners.isEmpty ? 1 : model.listeners.count	// room for "No listeners"
+		var minHeight = (topCount + botCount) * 30
+		minHeight += 120 // for top material
+		return CGFloat(min(minHeight, 500))
+	}
 }

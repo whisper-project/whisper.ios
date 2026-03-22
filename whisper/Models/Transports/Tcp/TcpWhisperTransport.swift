@@ -27,9 +27,18 @@ final class TcpWhisperTransport: PublishTransport {
     
     func stop() {
         logger.log("Stopping TCP whisper Transport")
-        closeChannels()
+		closeChannels(withDrop: true)
     }
-    
+
+	func canDisconnect() -> Bool {
+		return true
+	}
+
+	func disconnect() {
+		logger.log("Disconnecting TCP whisper Transport")
+		closeChannels(withDrop: false)
+	}
+
     func goToBackground() {
     }
     
@@ -120,7 +129,7 @@ final class TcpWhisperTransport: PublishTransport {
 	private func receiveAuthError(_ severity: TransportErrorSeverity, _ reason: String) {
 		logAnomaly("Whisper authentication error: \(reason)", kind: .global)
         failureCallback?(severity, reason)
-        closeChannels()
+        closeChannels(withDrop: false)
     }
     
     private func openChannels() {
@@ -136,7 +145,7 @@ final class TcpWhisperTransport: PublishTransport {
     }
 
 	private func openContentChannel() {
-		let channel = client!.channels.get(conversation.id + ":" + PreferenceData.contentId)
+		let channel = client!.channels.get(conversation.id + ":" + PreferenceData.getContentId(conversation.id))
 		contentChannel = channel
 	}
 
@@ -187,14 +196,18 @@ final class TcpWhisperTransport: PublishTransport {
 		                 "errMessage": errMessage])
 	}
 
-    private func closeChannels() {
+	private func closeChannels(withDrop: Bool) {
 		guard let control = controlChannel else {
 			// we never opened the channels, so nothing to do
 			return
 		}
-		logger.info("Send drop message to \(self.remotes.count) remotes")
-        let chunk = WhisperProtocol.ProtocolChunk.dropping()
-        control.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
+		if withDrop {
+			logger.info("Send drop message to \(self.remotes.count) remotes")
+			let chunk = WhisperProtocol.ProtocolChunk.dropping()
+			control.publish("all", data: chunk.toString(), callback: receiveErrorInfo)
+		} else {
+			logger.info("Leaving channels with \(self.remotes.count) active remotes")
+		}
 		contentChannel = nil
 		control.presence.leave("whisperer")
         control.detach()
@@ -248,7 +261,7 @@ final class TcpWhisperTransport: PublishTransport {
 		}
 		guard let remote = remotes[clientId] else {
 			// ignore messages from clients we're not connected to
-			logAnomaly("Got a presence message from a client that's not a listening remote?")
+			logAnomaly("Got a presence message from a client \(clientId) that's not a listening remote?")
 			return
 		}
 		guard !remote.hasDropped else {

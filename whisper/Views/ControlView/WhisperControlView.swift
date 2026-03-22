@@ -220,7 +220,7 @@ struct WhisperControlView: View {
 			.onChange(of: magnify) {
 				PreferenceData.magnifyWhenWhispering = magnify
 			}
-			.frame(minWidth: 2*buttonSize(), maxWidth: 105)
+			.frame(minWidth: 125, maxWidth: 170)
 			Spacer()
 		}
 	}

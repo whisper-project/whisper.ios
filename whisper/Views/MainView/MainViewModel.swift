@@ -16,6 +16,7 @@ final class MainViewModel: ObservableObject {
         self.factory.statusSubject
             .sink(receiveValue: setStatus)
             .store(in: &cancellables)
+		status = self.factory.statusSubject.value
     }
     
     deinit {

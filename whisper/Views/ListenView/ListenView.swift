@@ -10,6 +10,8 @@ struct ListenView: View {
 	@Environment(\.colorScheme) var colorScheme
 	@Environment(\.dynamicTypeSize) var dynamicTypeSize
 	@Environment(\.scenePhase) var scenePhase
+	@EnvironmentObject var sceneDelegate: SceneDelegate
+
 	@AppStorage("newest_whisper_location_preference") var liveWindowPosition: String?
 	@AppStorage("hear_typing_setting") var hearTyping: Bool?
 
@@ -25,7 +27,6 @@ struct ListenView: View {
 	@State private var confirmStop: Bool = false
 	@State private var inBackground: Bool = false
 	@State private var window: Window?
-	@StateObject private var appStatus = AppStatus.shared
 	@State private var viewHasRespondedToQuit = false
 	@State private var userStopped = false
 
@@ -71,27 +72,25 @@ struct ListenView: View {
 				}
 			}
 			.onAppear {
-				logger.log("ListenView appeared")
+				logLifecycle("ListenView appeared in scene \(sceneDelegate.id)")
+				PreferenceData.setSceneState(sceneDelegate.id, mode: "listen", conversationId: conversation.id)
 				self.model.start()
 				SleepControl.shared.disable(reason: "In Listen Session")
 			}
 			.onDisappear {
 				SleepControl.shared.enable()
-				logger.log("ListenView disappeared")
+				logLifecycle("ListenView disappeared in scene \(sceneDelegate.id)")
+				PreferenceData.clearSceneState(sceneDelegate.id)
 				self.model.stop()
 			}
-			.onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification), perform: { _ in
-				logger.log("Received notification that app will terminate")
-				quitListenView()
-			})
 			.onChange(of: hearTyping) {
 				if hearTyping == nil || hearTyping == false {
 					model.stopTypingSound()
 				}
 			}
-			.onChange(of: appStatus.appIsQuitting) {
-				if appStatus.appIsQuitting {
-					logger.log("App has been told to quit")
+			.onChange(of: sceneDelegate.disconnected) {
+				if sceneDelegate.disconnected {
+					logLifecycle("ListenView in scene \(sceneDelegate.id) quitting due to detach")
 					quitListenView()
 				}
 			}
@@ -108,20 +107,20 @@ struct ListenView: View {
 			.onChange(of: scenePhase) {
 				switch scenePhase {
 				case .background:
-					logger.log("Went to background")
+					logger.log("Listen view went to background")
 					inBackground = true
 					model.wentToBackground()
 				case .inactive:
-					logger.log("Went inactive")
+					logger.log("Listen view went inactive")
 					inBackground = false
 					model.wentToForeground()
 				case .active:
-					logger.log("Went to foreground")
+					logger.log("Listen view went to foreground")
 					inBackground = false
 					model.wentToForeground()
 				@unknown default:
 					inBackground = false
-					logger.error("Went to unknown phase: \(String(describing: scenePhase), privacy: .public)")
+					logAnomaly("Listen view went to unknown phase: \(String(describing: scenePhase))")
 				}
 			}
 		}
@@ -204,7 +203,6 @@ struct ListenView: View {
 
 	private func quitListenView() {
 		guard !viewHasRespondedToQuit else {
-			logger.log("Listen view is already terminating")
 			return
 		}
 		logger.warning("Listen view is terminating in response to quit signal")

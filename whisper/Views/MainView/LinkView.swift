@@ -6,25 +6,16 @@
 import SwiftUI
 
 struct LinkView: View {
-	@Environment(\.dismiss) private var dismiss
-
 	var conversation: ListenConversation?
 
 	@State private var mode: OperatingMode = .listen
 	@State private var restart: Bool = false
 
     var body: some View {
-		if let conversation = conversation {
+		if let conversation = conversation, mode == .listen {
 			ListenView(mode: $mode, restart: $restart, conversation: conversation)
-				.onChange(of: mode, initial: false) {
-					dismiss()
-				}
 		} else {
 			RootView()
 		}
     }
-}
-
-#Preview {
-    RootView()
 }
