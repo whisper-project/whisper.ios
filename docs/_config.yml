@@ -1,8 +1,8 @@
 title: Whisper
-description: Reference website for the app Whisper
+description: Website for the iOS app Whisper
 theme: just-the-docs
 
-url: https://whisper-project.github.io/client.swift
+url: https://whisper-project.github.io/whisper.ios
 
 plugins:
   - jekyll-relative-links
